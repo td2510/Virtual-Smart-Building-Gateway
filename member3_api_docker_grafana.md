@@ -4,23 +4,28 @@
 
 | Mục | Chi tiết |
 |---|---|
-| **Scope** | `gateway_api/`, `docker-compose.yml`, `mosquitto/`, `grafana/`, `README.md`, `.env.example` |
+| **Scope** | `gateway_api/`, `docker-compose.yml`, `mosquitto/`, `grafana/`, `README.md`, `.env`, `.env.example` |
 | **Ngôn ngữ** | Python 3.11+ |
 | **Thư viện chính** | `fastapi`, `uvicorn`, `paho-mqtt`, `influxdb-client` |
-| **Thời gian ước lượng** | 3–4 ngày |
+| **Thời gian ước lượng** | 4–5 ngày |
 
 > [!NOTE]
 > Thành viên 3 đóng vai trò **"người tích hợp"** — viết docker-compose.yml để gom tất cả service, cấu hình Grafana dashboard, và viết README cho cả nhóm. Cần phối hợp sớm với TV1 và TV2 về service names và env vars.
+
+> [!NOTE]
+> File này bao gồm cả các **yêu cầu nâng cao (Section 19)** để cộng điểm khuyến khích.
 
 ---
 
 ## ✅ Checklist task theo thứ tự
 
+### Phần bắt buộc
+
 | # | Task | Thời gian | Trạng thái |
 |---|---|---|---|
 | 1 | Đọc hiểu shared contracts (topic, message format, env vars) | 30 phút | `[ ]` |
 | 2 | Viết `docker-compose.yml` hoàn chỉnh | 2–3 giờ | `[ ]` |
-| 3 | Viết `.env.example` | 15 phút | `[ ]` |
+| 3 | Viết `.env.example` + `.env` | 15 phút | `[ ]` |
 | 4 | Viết `mosquitto/config/mosquitto.conf` | 15 phút | `[ ]` |
 | 5 | Lập trình `gateway_api/api.py` (FastAPI) | 3–4 giờ | `[ ]` |
 | 6 | Viết `gateway_api/requirements.txt` | 10 phút | `[ ]` |
@@ -30,6 +35,16 @@
 | 10 | Tạo Grafana dashboard JSON (6 panels) | 2–3 giờ | `[ ]` |
 | 11 | Viết `README.md` chi tiết | 1–2 giờ | `[ ]` |
 | 12 | Test toàn bộ stack bằng docker compose up | 1–2 giờ | `[ ]` |
+
+### ⭐ Phần nâng cao (cộng điểm khuyến khích)
+
+| # | Task nâng cao | Yêu cầu số | Thời gian | Trạng thái |
+|---|---|---|---|---|
+| A1 | Cấu hình username/password cho Mosquitto MQTT broker | #1 | 1 giờ | `[ ]` |
+| A2 | Thêm `healthcheck` cho tất cả service trong `docker-compose.yml` | #3 | 1–2 giờ | `[ ]` |
+| A3 | Thêm endpoint `GET /config/thresholds` và `PUT /config/thresholds` vào API | #6 | 1–2 giờ | `[ ]` |
+| A4 | Thêm Grafana alert rule cho nhiệt độ và CO2 | #7 | 1–2 giờ | `[ ]` |
+
 
 ---
 
@@ -887,3 +902,285 @@ Truy cập http://localhost:8000/docs để test tất cả endpoints trực qua
 - [ ] Docker volumes hoạt động (restart không mất data)
 - [ ] README đủ rõ để chạy lại từ đầu
 - [ ] Chụp screenshot cho báo cáo: docker ps, MQTT messages, Grafana, InfluxDB, API
+
+
+**Nâng cao:**
+- [ ] Mosquitto có username/password — tất cả service kết nối được với auth
+- [ ] Tất cả service có `healthcheck` — `docker compose ps` hiển thị `healthy`
+- [ ] `PUT /config/thresholds` cập nhật threshold trong gateway (TV2) thành công
+- [ ] Grafana alert rule sinh cảnh báo khi nhiệt độ > 30 hoặc CO2 > 1200
+
+---
+
+## ⭐ NÂNG CAO — Code bổ sung
+
+### [Nâng cao #1] Mosquitto Authentication (username/password)
+
+#### `mosquitto/config/mosquitto.conf` (bản có auth)
+
+```
+listener 1883
+allow_anonymous false
+password_file /mosquitto/config/passwd
+
+listener 9001
+protocol websockets
+allow_anonymous false
+password_file /mosquitto/config/passwd
+
+persistence true
+persistence_location /mosquitto/data/
+log_dest stdout
+```
+
+#### Tạo file password:
+
+```bash
+# Chạy trong terminal, không phải trong docker-compose
+docker run --rm eclipse-mosquitto:2 sh -c "mosquitto_passwd -b -c /tmp/passwd iotuser iotpass; cat /tmp/passwd" > mosquitto/config/passwd
+```
+
+#### Cập nhật `.env.example` và `.env`:
+
+```env
+MQTT_USERNAME=iotuser
+MQTT_PASSWORD=iotpass
+```
+
+#### Cập nhật `docker-compose.yml` — thêm env vars MQTT auth vào tất cả service:
+
+```yaml
+environment:
+  - MQTT_USERNAME=${MQTT_USERNAME:-iotuser}
+  - MQTT_PASSWORD=${MQTT_PASSWORD:-iotpass}
+```
+
+#### Code cần thêm vào `sensor.py`, `actuator.py`, `gateway.py`, `api.py` (TV1 + TV2 thực hiện):
+
+```python
+MQTT_USERNAME = os.getenv("MQTT_USERNAME", "")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "")
+
+# Sau khi tạo mqtt.Client():
+if MQTT_USERNAME:
+    client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+    logger.info(f"MQTT auth enabled for user: {MQTT_USERNAME}")
+```
+
+---
+
+### [Nâng cao #3] Health Checks trong Docker Compose
+
+Cập nhật `docker-compose.yml` — thêm `healthcheck` vào các service:
+
+```yaml
+  influxdb:
+    image: influxdb:2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/#' -C 1 -i healthcheck -W 3 2>/dev/null; exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --tries=1 http://localhost:3000/api/health -O /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  gateway-api:
+    build: ./gateway_api
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --tries=1 http://localhost:8000/health -O /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+```
+
+Cập nhật `depends_on` để chờ service healthy trước:
+
+```yaml
+iot-gateway:
+  depends_on:
+    mosquitto:
+      condition: service_healthy
+    influxdb:
+      condition: service_healthy
+```
+
+---
+
+### [Nâng cao #6] API Endpoint Threshold Dynamic
+
+Thêm vào `api.py` — 2 endpoint GET/PUT để đọc và cập nhật threshold:
+
+```python
+import json as _json
+
+THRESHOLD_FILE = os.getenv("THRESHOLD_FILE", "/app/thresholds.json")
+DEFAULT_THRESHOLDS = {
+    "temperature_high": 30.0,
+    "temperature_low": 27.0,
+    "co2_high": 1200.0,
+    "light_unnecessary": 300.0,
+}
+
+
+class ThresholdUpdate(BaseModel):
+    temperature_high: float = None
+    temperature_low: float = None
+    co2_high: float = None
+    light_unnecessary: float = None
+
+
+@app.get("/config/thresholds")
+async def get_thresholds():
+    """Return current rule engine thresholds."""
+    try:
+        if os.path.exists(THRESHOLD_FILE):
+            with open(THRESHOLD_FILE) as f:
+                return _json.load(f)
+        return DEFAULT_THRESHOLDS
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/config/thresholds")
+async def update_thresholds(update: ThresholdUpdate):
+    """Update rule engine thresholds (shared volume with gateway)."""
+    try:
+        current = DEFAULT_THRESHOLDS.copy()
+        if os.path.exists(THRESHOLD_FILE):
+            with open(THRESHOLD_FILE) as f:
+                current = _json.load(f)
+        updates = update.model_dump(exclude_none=True)
+        current.update(updates)
+        with open(THRESHOLD_FILE, "w") as f:
+            _json.dump(current, f, indent=2)
+        logger.info(f"Thresholds updated: {updates}")
+        return {"status": "updated", "thresholds": current}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+> **Quan trọng:** Cần shared Docker volume giữa `gateway-api` và `iot-gateway`:
+> ```yaml
+> volumes:
+>   thresholds_data:
+>
+> iot-gateway:
+>   volumes:
+>     - thresholds_data:/app
+>
+> gateway-api:
+>   volumes:
+>     - thresholds_data:/app
+> ```
+
+**Test:**
+```bash
+curl http://localhost:8000/config/thresholds
+
+curl -X PUT http://localhost:8000/config/thresholds \
+  -H "Content-Type: application/json" \
+  -d '{"temperature_high": 28.0}'
+```
+
+---
+
+### [Nâng cao #7] Grafana Alert Rules
+
+Tạo file `grafana/provisioning/alerting/rules.yml`:
+
+```yaml
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: SmartBuilding Alerts
+    folder: Smart Building
+    interval: 1m
+    rules:
+
+      - uid: alert-temperature-high
+        title: Temperature High Alert
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: influxdb
+            model:
+              query: |
+                from(bucket: "smart-building")
+                  |> range(start: -5m)
+                  |> filter(fn: (r) => r._measurement == "room_telemetry" and r._field == "temperature")
+                  |> mean()
+          - refId: C
+            datasourceUid: "-100"
+            model:
+              conditions:
+                - evaluator: {params: [30], type: gt}
+                  query: {params: [A]}
+                  reducer: {type: last}
+                  type: query
+              refId: C
+              type: classic_conditions
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Nhiet do vuot nguong 30 do C"
+        labels:
+          severity: warning
+
+      - uid: alert-co2-high
+        title: CO2 Level High Alert
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: influxdb
+            model:
+              query: |
+                from(bucket: "smart-building")
+                  |> range(start: -5m)
+                  |> filter(fn: (r) => r._measurement == "room_telemetry" and r._field == "co2_ppm")
+                  |> mean()
+          - refId: C
+            datasourceUid: "-100"
+            model:
+              conditions:
+                - evaluator: {params: [1200], type: gt}
+                  query: {params: [A]}
+                  reducer: {type: last}
+                  type: query
+              refId: C
+              type: classic_conditions
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Muc CO2 vuot nguong 1200 ppm"
+        labels:
+          severity: critical
+```
+
+> **Kiểm tra:** Vào Grafana UI → **Alerting → Alert rules → SmartBuilding Alerts**
+> Trạng thái sẽ hiển thị `Normal`, `Pending`, hoặc `Firing`.
