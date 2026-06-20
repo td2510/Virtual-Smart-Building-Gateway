@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy          # Grafana server kết nối tới InfluxDB (không phải browser)
+    url: http://influxdb:8086
+    jsonData:
+      version: Flux        # Dùng ngôn ngữ Flux (không phải InfluxQL cũ)
+      # ⚠️ TODO [SYNC TV2]: "organization" và "defaultBucket" PHẢI KHỚP với giá trị TV2 dùng khi ghi dữ liệu
+      # Nếu TV2 dùng org khác → sửa "iot-org" thành tên org TV2 dùng
+      # Nếu TV2 dùng bucket khác → sửa "smart-building" thành tên bucket TV2 dùng
+      organization: iot-org
+      defaultBucket: smart-building
+    secureJsonData:
+      # ⚠️ TODO [SYNC TV2]: Token này PHẢI KHỚP với INFLUXDB_TOKEN trong .env
+      # Và phải là token TV2 đã dùng để ghi dữ liệu vào InfluxDB
+      token: my-super-secret-token
+    isDefault: true        # Đây là datasource mặc định
+    editable: true
+

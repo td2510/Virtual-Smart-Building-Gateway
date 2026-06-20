@@ -1,0 +1,206 @@
+# ============================================================
+# 📋 CHECKLIST TÍCH HỢP — Những chỗ CẦN SỬa sau khi nhận code TV1 + TV2
+# ============================================================
+# ⚠️ [A] BUILD PATHS : Kiểm tra đường dẫn thư mục của TV1 và TV2 có đúng không
+#      • ./virtual_sensor   → TV1 có tạo thư mục này đúng tên không?
+#      • ./virtual_actuator → TV1 có tạo thư mục này đúng tên không?
+#      • ./iot_gateway      → TV2 có tạo thư mục này đúng tên không?
+# ⚠️ [B] ENV VARS      : Chắc chắn các env var trong mỗi service khớp với code của TV1 và TV2
+# ⚠️ [C] ROOM_ID       : Đảm bảo ROOM_ID trong sensor/actuator trùng với KNOWN_ROOMS trong api.py
+# ⚠️ [D] PORT CONFLICTS: Kiểm tra máy bạn không có service nào đang dùng port 1883, 8086, 3000, 8000
+# ============================================================
+
+services:
+  # ============================================================
+  # MQTT Broker — "Bưu điện" trung tâm cho mọi tin nhắn IoT
+  # ============================================================
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"   # Port MQTT tiêu chuẩn
+      - "9001:9001"   # Port WebSocket
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    restart: unless-stopped
+
+  # ============================================================
+  # InfluxDB — Database lưu dữ liệu time-series
+  # ============================================================
+  influxdb:
+    image: influxdb:2
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME:-admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD:-admin12345}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG:-iot-org}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET:-smart-building}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-my-super-secret-token}
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    restart: unless-stopped
+
+  # ============================================================
+  # Grafana — Dashboard hiển thị dữ liệu realtime
+  # ============================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+
+  # ============================================================
+  # Virtual Sensors — TV1 viết code (build từ ./virtual_sensor)
+  # ============================================================
+  # ⚠️ TODO [SYNC TV1] — Checklist item A
+  # Sửa đường dẫn build nếu TV1 đặt thư mục khác tên
+  # ⚠️ TODO [SYNC TV1] — Checklist item C
+  # ROOM_ID dưới đây PHẢI KHỚP với những gì TV1 kỳ vọng trong sensor.py
+  # ⚠️ TODO [SYNC TV1] — Checklist item B
+  # Hỏi TV1: sensor.py đọc env var nào? Có cần thêm env var nào không?
+  virtual-sensor-room-01:
+    build: ./virtual_sensor
+    container_name: virtual-sensor-room-01
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - ROOM_ID=room-01
+      - DEVICE_ID=sensor-room-01
+      - PUBLISH_INTERVAL=${PUBLISH_INTERVAL:-5}
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  virtual-sensor-room-02:
+    build: ./virtual_sensor
+    container_name: virtual-sensor-room-02
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - ROOM_ID=room-02
+      - DEVICE_ID=sensor-room-02
+      - PUBLISH_INTERVAL=${PUBLISH_INTERVAL:-5}
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  virtual-sensor-room-03:
+    build: ./virtual_sensor
+    container_name: virtual-sensor-room-03
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - ROOM_ID=room-03
+      - DEVICE_ID=sensor-room-03
+      - PUBLISH_INTERVAL=${PUBLISH_INTERVAL:-5}
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  # ============================================================
+  # Virtual Actuators — TV1 viết code (build từ ./virtual_actuator)
+  # ============================================================
+  # ⚠️ TODO [SYNC TV1] — Checklist item A
+  # Sửa đường dẫn build nếu TV1 đặt thư mục khác tên
+  # ⚠️ TODO [SYNC TV1] — Checklist item B
+  # Hỏi TV1: actuator.py đọc env var nào ngoài các biến đã liệt kê?
+  virtual-actuator-room-01:
+    build: ./virtual_actuator
+    container_name: virtual-actuator-room-01
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - ROOM_ID=room-01
+      - DEVICE_ID=actuator-room-01
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  virtual-actuator-room-02:
+    build: ./virtual_actuator
+    container_name: virtual-actuator-room-02
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - ROOM_ID=room-02
+      - DEVICE_ID=actuator-room-02
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  virtual-actuator-room-03:
+    build: ./virtual_actuator
+    container_name: virtual-actuator-room-03
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - ROOM_ID=room-03
+      - DEVICE_ID=actuator-room-03
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+
+  # ============================================================
+  # IoT Gateway — TV2 viết code (build từ ./iot_gateway)
+  # ============================================================
+  # ⚠️ TODO [SYNC TV2] — Checklist item A
+  # Sửa đường dẫn build nếu TV2 đặt thư mục khác tên (vd: "gateway" thay vì "iot_gateway")
+  # ⚠️ TODO [SYNC TV2] — Checklist item B
+  # Hỏi TV2: gateway.py đọc env var nào ngoài các biến đã liệt kê? Có thêm ROOM_ID hay LOG_LEVEL không?
+  iot-gateway:
+    build: ./iot_gateway
+    container_name: iot-gateway
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-my-super-secret-token}
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-iot-org}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-smart-building}
+    depends_on:
+      - mosquitto
+      - influxdb
+    restart: unless-stopped
+
+  # ============================================================
+  # Gateway REST API — TV3 viết code (build từ ./gateway_api)
+  # ============================================================
+  gateway-api:
+    build: ./gateway_api
+    container_name: gateway-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-my-super-secret-token}
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-iot-org}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-smart-building}
+    depends_on:
+      - mosquitto
+      - influxdb
+    restart: unless-stopped
+
+# ============================================================
+# Docker Volumes — Lưu dữ liệu bền vững khi container restart
+# ============================================================
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  influxdb_data:
+  grafana_data:
