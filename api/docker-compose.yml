@@ -73,7 +73,7 @@ services:
   # ⚠️ TODO [SYNC TV1] — Checklist item B
   # Hỏi TV1: sensor.py đọc env var nào? Có cần thêm env var nào không?
   virtual-sensor-room-01:
-    build: ./virtual_sensor
+    build: ../virtual_sensor
     container_name: virtual-sensor-room-01
     environment:
       - MQTT_BROKER=mosquitto
@@ -86,7 +86,7 @@ services:
     restart: unless-stopped
 
   virtual-sensor-room-02:
-    build: ./virtual_sensor
+    build: ../virtual_sensor
     container_name: virtual-sensor-room-02
     environment:
       - MQTT_BROKER=mosquitto
@@ -99,7 +99,7 @@ services:
     restart: unless-stopped
 
   virtual-sensor-room-03:
-    build: ./virtual_sensor
+    build: ../virtual_sensor
     container_name: virtual-sensor-room-03
     environment:
       - MQTT_BROKER=mosquitto
@@ -119,7 +119,7 @@ services:
   # ⚠️ TODO [SYNC TV1] — Checklist item B
   # Hỏi TV1: actuator.py đọc env var nào ngoài các biến đã liệt kê?
   virtual-actuator-room-01:
-    build: ./virtual_actuator
+    build: ../virtual_actuator
     container_name: virtual-actuator-room-01
     environment:
       - MQTT_BROKER=mosquitto
@@ -131,7 +131,7 @@ services:
     restart: unless-stopped
 
   virtual-actuator-room-02:
-    build: ./virtual_actuator
+    build: ../virtual_actuator
     container_name: virtual-actuator-room-02
     environment:
       - MQTT_BROKER=mosquitto
@@ -143,7 +143,7 @@ services:
     restart: unless-stopped
 
   virtual-actuator-room-03:
-    build: ./virtual_actuator
+    build: ../virtual_actuator
     container_name: virtual-actuator-room-03
     environment:
       - MQTT_BROKER=mosquitto
@@ -162,7 +162,7 @@ services:
   # ⚠️ TODO [SYNC TV2] — Checklist item B
   # Hỏi TV2: gateway.py đọc env var nào ngoài các biến đã liệt kê? Có thêm ROOM_ID hay LOG_LEVEL không?
   iot-gateway:
-    build: ./iot_gateway
+    build: ../iot_gateway
     container_name: iot-gateway
     environment:
       - MQTT_BROKER=mosquitto
