@@ -399,6 +399,50 @@ Virtual-Smart-Building-Gateway/
 
 ---
 
+##  Các tính năng nâng cao
+
+Hệ thống đã được tích hợp thêm các tính năng nâng cao sau để tăng cường độ tin cậy và linh hoạt.
+
+### 1. Cấu hình bảo mật cho MQTT Broker
+- **Mô tả**: Mosquitto Broker không còn cho phép kết nối ẩn danh (anonymous). Tất cả các service đều phải đăng nhập.
+- **Cách xem**: Kiểm tra file `api/.env` sẽ thấy `MQTT_USER=admin` và `MQTT_PASSWORD=admin12345`.
+- **Cách test**: Thử kết nối MQTT client bất kỳ (như MQTT Explorer) tới `localhost:1883` mà không điền user/password. Broker sẽ lập tức ngắt kết nối.
+
+### 2. Docker Compose Healthchecks
+- **Mô tả**: Thay vì chỉ quy định thứ tự khởi động lỏng lẻo, `docker-compose.yml` giờ đây có khai báo `healthcheck` cho `mosquitto`, `influxdb`, `grafana` và `gateway-api`. Các service phụ thuộc (như Sensor, Gateway) sẽ thực sự đợi đến khi Broker và Database "Healthy" mới bắt đầu chạy.
+- **Cách xem**: Chạy lệnh `docker ps` và bạn sẽ thấy trạng thái `(healthy)` ở cột STATUS của các container cốt lõi.
+
+### 3. Phát hiện Sensor Offline (Timeout)
+- **Mô tả**: IoT Gateway liên tục theo dõi thời gian bản tin cuối cùng từ các phòng. Nếu quá 30 giây không nhận được dữ liệu, nó sẽ tự động phát ra một cảnh báo nguy cấp.
+- **Cách test**: 
+  1. Tắt một sensor bất kỳ: `docker stop virtual-sensor-room-01`
+  2. Chờ 30 giây và kiểm tra log của Gateway: `docker compose logs -f iot-gateway` (sẽ thấy báo lỗi "Sensor offline detected").
+  3. Kiểm tra API Event hoặc Grafana để xem cảnh báo được ghi lại.
+
+### 4. Actuator Acknowledgement Timeout
+- **Mô tả**: Khi Gateway ra lệnh điều khiển (vd: bật quạt), nó sẽ chờ phản hồi trạng thái từ Actuator đó. Nếu sau 10 giây Actuator không báo cáo đã bật thành công, Gateway sẽ phát ra cảnh báo.
+- **Cách test**:
+  1. Tắt một actuator: `docker stop virtual-actuator-room-01`
+  2. Gửi lệnh qua API: `curl -X POST http://localhost:8000/rooms/room-01/command -H "Content-Type: application/json" -d '{"target":"fan","action":"on"}'`
+  3. Chờ 10 giây và quan sát log Gateway để thấy thông báo Timeout.
+
+### 5. Cập nhật Rule Engine linh hoạt (Dynamic Rules API)
+- **Mô tả**: Trước đây các ngưỡng kích hoạt (vd nhiệt độ > 30) bị gắn cứng vào code. Hiện tại, chúng đã được lưu trong bộ nhớ và Gateway sẽ lắng nghe cập nhật qua MQTT (`building/gateway/config`).
+- **Cách test**:
+  1. Gửi request PUT để thay đổi ngưỡng:
+     ```bash
+     curl -X PUT http://localhost:8000/rules \
+          -H "Content-Type: application/json" \
+          -d '{"temperature_high": 25.0}'
+     ```
+  2. Ngay lập tức, nếu nhiệt độ phòng hiện tại đang là 26 độ, Gateway sẽ tự động ra lệnh bật Quạt (do vượt ngưỡng mới 25.0). Xem log Gateway để thấy tác dụng.
+
+### 6. Cảnh báo qua Grafana Alerting
+- **Mô tả**: Grafana đã được cấu hình tự động (provisioning) một Alert Rule. Cứ mỗi 1 phút, nó sẽ quét bảng `gateway_events` trong InfluxDB. Nếu phát hiện có sự kiện mức độ `critical` (như Sensor Offline hay Actuator Timeout), Grafana sẽ kích hoạt báo động.
+- **Cách xem**: Truy cập Grafana (http://localhost:3000), vào menu **Alerting > Alert rules** để xem rule "Critical Gateway Event Detected". Mở bảng điều khiển Dashboard để thấy trạng thái Firing nếu bạn đang test các trường hợp lỗi ở trên.
+
+---
+
 ##  Các lỗi thường gặp và cách khắc phục
 
 ### 1. Port đã bị chiếm
@@ -427,17 +471,9 @@ docker compose logs <service-name>
 docker compose up -d --build
 ```
 
-### 3. InfluxDB chưa sẵn sàng khi Gateway khởi động
+### 3. Vấn đề phụ thuộc khởi động (Đã được giải quyết)
 
-**Triệu chứng**: Gateway log báo `InfluxDB connection failed`
-
-**Khắc phục**: Gateway có cơ chế **retry tự động** (thử lại mỗi 5 giây). Chờ InfluxDB khởi động xong, Gateway sẽ tự kết nối.
-
-### 4. MQTT Broker chưa sẵn sàng
-
-**Triệu chứng**: Sensor/Actuator log báo `Connection failed`
-
-**Khắc phục**: Tương tự InfluxDB, tất cả services đều có **retry tự động**. Chờ Mosquitto khởi động xong.
+Hệ thống hiện tại đã sử dụng **Docker Healthcheck**. Do đó, các lỗi như `InfluxDB connection failed` hay `MQTT Connection failed` lúc khởi động sẽ hiếm khi xảy ra vì các Service phụ thuộc luôn kiên nhẫn chờ đến khi Database/Broker thực sự sẵn sàng (Healthy) mới bắt đầu chạy.
 
 ### 5. Dữ liệu cũ gây nhiễu
 

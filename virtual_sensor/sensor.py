@@ -23,6 +23,8 @@ import paho.mqtt.client as mqtt
 # Configuration from environment variables
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_USER = os.getenv("MQTT_USER", "admin")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "admin12345")
 ROOM_ID = os.getenv("ROOM_ID", "room-01")
 DEVICE_ID = os.getenv("DEVICE_ID", f"sensor-{ROOM_ID}")
 PUBLISH_INTERVAL = int(os.getenv("PUBLISH_INTERVAL", "5"))
@@ -142,6 +144,9 @@ def main():
     )
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
+    
+    if MQTT_USER and MQTT_PASSWORD:
+        client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
     # Auto-reconnect with exponential backoff (advanced #10)
     client.reconnect_delay_set(min_delay=1, max_delay=30)

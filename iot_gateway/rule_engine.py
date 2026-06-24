@@ -18,6 +18,14 @@ from typing import Optional
 
 logger = logging.getLogger("rule_engine")
 
+# Dynamic thresholds that can be updated via API
+THRESHOLDS = {
+    "temperature_high": 30.0,
+    "temperature_low": 27.0,
+    "co2_high": 1200.0,
+    "light_lux": 300.0
+}
+
 
 class RuleResult:
     """Result of evaluating a single rule."""
@@ -59,9 +67,9 @@ def _make_command(room_id: str, target: str, action: str,
 
 def rule_temperature_high(room_id: str, data: dict,
                           actuator_state: dict) -> RuleResult:
-    """Rule 1: If temperature > 30, turn ON fan."""
+    """Rule 1: If temperature > threshold, turn ON fan."""
     temp = data.get("temperature", 0)
-    threshold = 30.0
+    threshold = THRESHOLDS["temperature_high"]
 
     if temp > threshold:
         # Only trigger if fan is not already ON
@@ -80,9 +88,9 @@ def rule_temperature_high(room_id: str, data: dict,
 
 def rule_temperature_low(room_id: str, data: dict,
                          actuator_state: dict) -> RuleResult:
-    """Rule 2: If temperature < 27, turn OFF fan."""
+    """Rule 2: If temperature < threshold, turn OFF fan."""
     temp = data.get("temperature", 30)
-    threshold = 27.0
+    threshold = THRESHOLDS["temperature_low"]
 
     if temp < threshold:
         if actuator_state.get("fan") != "off":
@@ -100,9 +108,9 @@ def rule_temperature_low(room_id: str, data: dict,
 
 def rule_co2_high(room_id: str, data: dict,
                   actuator_state: dict) -> RuleResult:
-    """Rule 3: If co2_ppm > 1200, turn ON alarm."""
+    """Rule 3: If co2_ppm > threshold, turn ON alarm."""
     co2 = data.get("co2_ppm", 0)
-    threshold = 1200.0
+    threshold = THRESHOLDS["co2_high"]
 
     if co2 > threshold:
         if actuator_state.get("alarm") != "on":
@@ -119,10 +127,10 @@ def rule_co2_high(room_id: str, data: dict,
 
 def rule_unnecessary_light(room_id: str, data: dict,
                            actuator_state: dict) -> RuleResult:
-    """Rule 4: If occupancy==false AND light_lux > 300, turn OFF light."""
+    """Rule 4: If occupancy==false AND light_lux > threshold, turn OFF light."""
     occupancy = data.get("occupancy", True)
     light_lux = data.get("light_lux", 0)
-    threshold = 300.0
+    threshold = THRESHOLDS["light_lux"]
 
     if not occupancy and light_lux > threshold:
         if actuator_state.get("light") != "off":

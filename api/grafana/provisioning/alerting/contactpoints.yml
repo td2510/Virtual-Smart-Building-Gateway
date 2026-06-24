@@ -1,0 +1,10 @@
+apiVersion: 1
+contactPoints:
+  - orgId: 1
+    name: "Admin Webhook"
+    receivers:
+      - uid: "admin-webhook"
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: "http://example.com/api/alerts"

@@ -12,8 +12,14 @@ services:
       - "9001:9001"   # Port WebSocket
     volumes:
       - ../mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ../mosquitto/config/passwd:/mosquitto/config/passwd
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/broker/version' -C 1 -u ${MQTT_USER:-admin} -P ${MQTT_PASSWORD:-admin12345} > /dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
   # InfluxDB — Database lưu dữ liệu time-series
@@ -31,6 +37,11 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-my-super-secret-token}
     volumes:
       - influxdb_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
   # Grafana — Dashboard hiển thị dữ liệu realtime
@@ -45,8 +56,14 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
     restart: unless-stopped
 
   # Virtual Sensors — TV1 viết code (build từ ./virtual_sensor)
@@ -63,7 +80,8 @@ services:
       - DEVICE_ID=sensor-room-01
       - PUBLISH_INTERVAL=${PUBLISH_INTERVAL:-5}
     depends_on:
-      - mosquitto
+      mosquitto:
+        condition: service_healthy
     restart: unless-stopped
 
   virtual-sensor-room-02:
@@ -76,7 +94,8 @@ services:
       - DEVICE_ID=sensor-room-02
       - PUBLISH_INTERVAL=${PUBLISH_INTERVAL:-5}
     depends_on:
-      - mosquitto
+      mosquitto:
+        condition: service_healthy
     restart: unless-stopped
 
   virtual-sensor-room-03:
@@ -89,7 +108,8 @@ services:
       - DEVICE_ID=sensor-room-03
       - PUBLISH_INTERVAL=${PUBLISH_INTERVAL:-5}
     depends_on:
-      - mosquitto
+      mosquitto:
+        condition: service_healthy
     restart: unless-stopped
 
   # Virtual Actuators — TV1 viết code (build từ ./virtual_actuator)
@@ -104,7 +124,8 @@ services:
       - ROOM_ID=room-01
       - DEVICE_ID=actuator-room-01
     depends_on:
-      - mosquitto
+      mosquitto:
+        condition: service_healthy
     restart: unless-stopped
 
   virtual-actuator-room-02:
@@ -116,7 +137,8 @@ services:
       - ROOM_ID=room-02
       - DEVICE_ID=actuator-room-02
     depends_on:
-      - mosquitto
+      mosquitto:
+        condition: service_healthy
     restart: unless-stopped
 
   virtual-actuator-room-03:
@@ -128,7 +150,8 @@ services:
       - ROOM_ID=room-03
       - DEVICE_ID=actuator-room-03
     depends_on:
-      - mosquitto
+      mosquitto:
+        condition: service_healthy
     restart: unless-stopped
 
   # IoT Gateway — TV2 viết code (build từ ./iot_gateway)
@@ -145,8 +168,10 @@ services:
       - INFLUXDB_ORG=${INFLUXDB_ORG:-iot-org}
       - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-smart-building}
     depends_on:
-      - mosquitto
-      - influxdb
+      mosquitto:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
     restart: unless-stopped
 
   # Gateway REST API — TV3 viết code (build từ ./gateway_api)
@@ -162,9 +187,16 @@ services:
       - INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-my-super-secret-token}
       - INFLUXDB_ORG=${INFLUXDB_ORG:-iot-org}
       - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-smart-building}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     depends_on:
-      - mosquitto
-      - influxdb
+      mosquitto:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
     restart: unless-stopped
 
 # Docker Volumes — Lưu dữ liệu bền vững khi container restart

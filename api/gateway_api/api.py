@@ -24,6 +24,8 @@ from influxdb_client import InfluxDBClient
 # Đọc cấu hình từ environment variables
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_USER = os.getenv("MQTT_USER", "admin")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "admin12345")
 INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://influxdb:8086")
 INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-token")
 INFLUXDB_ORG = os.getenv("INFLUXDB_ORG", "iot-org")
@@ -60,25 +62,30 @@ class HealthResponse(BaseModel):
     timestamp: str
 
 
+class RuleUpdateRequest(BaseModel):
+    temperature_high: float | None = None
+    temperature_low: float | None = None
+    co2_high: float | None = None
+    light_lux: float | None = None
+
+
 # MQTT Client — chỉ dùng để PUBLISH lệnh điều khiển
 # Nếu TV2 cấu hình Mosquitto có username/password (nâng cao),
 # cần bổ sung 2 dòng sau TRƯỚC khi gọi mqtt_client.connect():
-#
-#   MQTT_USERNAME = os.getenv("MQTT_USERNAME", "")
-#   MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "")
-#   if MQTT_USERNAME:
-#       mqtt_client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
-#
-# Và thêm vào .env: MQTT_USERNAME=iotuser, MQTT_PASSWORD=iotpass
-mqtt_client = mqtt.Client(
-    client_id="gateway-api",
-    callback_api_version=mqtt.CallbackAPIVersion.VERSION2
-)
-
+mqtt_client = None
 
 @app.on_event("startup")
 async def startup():
-    """Kết nối tới MQTT broker khi API khởi động."""
+    """Khởi tạo và kết nối tới MQTT broker khi API khởi động."""
+    global mqtt_client
+    mqtt_client = mqtt.Client(
+        client_id="gateway-api",
+        callback_api_version=mqtt.CallbackAPIVersion.VERSION2
+    )
+
+    if MQTT_USER and MQTT_PASSWORD:
+        mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+
     try:
         mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
         mqtt_client.loop_start()
@@ -277,6 +284,24 @@ async def get_room_events(room_id: str, limit: int = 20):
         "room_id": room_id,
         "events": events,
         "count": len(events)
+    }
+
+
+@app.put("/rules")
+async def update_rules(req: RuleUpdateRequest):
+    """Cập nhật cấu hình ngưỡng (thresholds) cho Rule Engine."""
+    payload = {k: v for k, v in req.model_dump().items() if v is not None}
+    if not payload:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    # Publish to MQTT for the Gateway to pick up
+    topic = "building/gateway/config"
+    mqtt_client.publish(topic, json.dumps(payload), qos=1)
+
+    return {
+        "status": "success",
+        "message": "Rules update published",
+        "updated_fields": payload
     }
 
 

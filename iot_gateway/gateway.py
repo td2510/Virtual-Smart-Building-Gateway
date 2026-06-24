@@ -25,6 +25,8 @@ from state_store import StateStore
 # Configuration from environment variables
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_USER = os.getenv("MQTT_USER", "admin")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "admin12345")
 
 INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://influxdb:8086")
 INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-token")
@@ -34,6 +36,7 @@ INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "smart-building")
 # MQTT topic patterns (wildcard subscription for all rooms)
 TELEMETRY_TOPIC = "building/+/sensor/telemetry"
 ACTUATOR_STATUS_TOPIC = "building/+/actuator/status"
+CONFIG_TOPIC = "building/gateway/config"
 
 # Logging
 logging.basicConfig(
@@ -46,6 +49,10 @@ logger = logging.getLogger("iot-gateway")
 state_store = StateStore()
 influx_client = None
 write_api = None
+
+# Trackers for timeout detection
+last_seen = {}
+pending_commands = {}
 
 
 # InfluxDB Setup
@@ -179,8 +186,10 @@ def on_connect(client, userdata, flags, rc, properties=None):
         logger.info(f" Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
         client.subscribe(TELEMETRY_TOPIC, qos=1)
         client.subscribe(ACTUATOR_STATUS_TOPIC, qos=1)
+        client.subscribe(CONFIG_TOPIC, qos=1)
         logger.info(f" Subscribed to: {TELEMETRY_TOPIC}")
         logger.info(f" Subscribed to: {ACTUATOR_STATUS_TOPIC}")
+        logger.info(f" Subscribed to: {CONFIG_TOPIC}")
     else:
         logger.error(f" Connection failed (rc={rc})")
 
@@ -200,6 +209,12 @@ def on_message(client, userdata, msg):
             handle_telemetry(client, topic, payload)
         elif "/actuator/status" in topic:
             handle_actuator_status(client, topic, payload)
+        elif "gateway/config" in topic:
+            import rule_engine
+            logger.info(f" Received config update: {payload}")
+            for k, v in payload.items():
+                rule_engine.THRESHOLDS[k] = float(v)
+            logger.info(f" Updated rules: {rule_engine.THRESHOLDS}")
         else:
             logger.warning(f"Unknown topic: {topic}")
 
@@ -217,6 +232,9 @@ def handle_telemetry(client, topic: str, data: dict):
     """
     room_id = data.get("room_id", "unknown")
     device_id = data.get("device_id", "unknown")
+
+    # Update last seen
+    last_seen[room_id] = datetime.now(timezone.utc)
 
     logger.info(f" Telemetry from {room_id}: temp={data.get('temperature')}, "
                f"co2={data.get('co2_ppm')}, occupancy={data.get('occupancy')}")
@@ -264,6 +282,12 @@ def handle_telemetry(client, topic: str, data: dict):
         logger.info(f" Command sent to {room_id}: "
                    f"{command['target']}={command['action']} "
                    f"(reason={command['reason']})")
+        # Track pending command for timeout detection
+        pending_commands[room_id] = {
+            "target": command["target"],
+            "action": command["action"],
+            "timestamp": datetime.now(timezone.utc)
+        }
 
 
 def handle_actuator_status(client, topic: str, data: dict):
@@ -274,6 +298,13 @@ def handle_actuator_status(client, topic: str, data: dict):
     logger.info(f" Actuator status from {room_id}: "
                f"fan={data.get('fan')}, light={data.get('light')}, "
                f"alarm={data.get('alarm')}")
+
+    # Clear pending commands if satisfied
+    if room_id in pending_commands:
+        cmd = pending_commands[room_id]
+        if data.get(cmd["target"]) == cmd["action"]:
+            logger.info(f" Actuator {cmd['target']}={cmd['action']} confirmed for {room_id}")
+            del pending_commands[room_id]
 
     # Update state store
     state_store.update_actuator(room_id, data)
@@ -299,6 +330,9 @@ def main():
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
     client.on_message = on_message
+    
+    if MQTT_USER and MQTT_PASSWORD:
+        client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 
     # Connect with retry
     while True:
@@ -310,7 +344,31 @@ def main():
             time.sleep(5)
 
     logger.info("Gateway is running. Processing messages...")
-    client.loop_forever()
+    client.loop_start()
+
+    from rule_engine import _make_event
+
+    while True:
+        time.sleep(5)
+        now = datetime.now(timezone.utc)
+
+        # Check for offline sensors (30s timeout)
+        for room_id, t in list(last_seen.items()):
+            if (now - t).total_seconds() > 30:
+                logger.error(f" Sensor offline detected in {room_id}")
+                event = _make_event(room_id, "sensor_offline", "critical", 0, 30, "notify_admin")
+                write_event(event)
+                client.publish(f"building/{room_id}/gateway/event", json.dumps(event), qos=1)
+                del last_seen[room_id] # Prevent multiple alerts
+
+        # Check for actuator timeouts (10s timeout)
+        for room_id, cmd in list(pending_commands.items()):
+            if (now - cmd["timestamp"]).total_seconds() > 10:
+                logger.error(f" Actuator timeout in {room_id} for command {cmd['target']}={cmd['action']}")
+                event = _make_event(room_id, "actuator_timeout", "critical", 0, 10, "notify_admin")
+                write_event(event)
+                client.publish(f"building/{room_id}/gateway/event", json.dumps(event), qos=1)
+                del pending_commands[room_id]
 
 
 if __name__ == "__main__":
