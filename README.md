@@ -252,27 +252,26 @@ docker compose logs -f mosquitto
 
 | Method | Endpoint | Mô tả |
 |---|---|---|
-| `GET` | `/` | Health check |
-| `GET` | `/api/rooms` | Danh sách phòng |
-| `GET` | `/api/rooms/{room_id}/telemetry` | Telemetry mới nhất của phòng |
-| `GET` | `/api/rooms/{room_id}/actuator` | Trạng thái actuator của phòng |
-| `GET` | `/api/rooms/{room_id}/events` | Các sự kiện bất thường |
-| `POST` | `/api/rooms/{room_id}/command` | Gửi lệnh điều khiển thủ công |
+| `GET` | `/health` | Health check |
+| `GET` | `/rooms` | Danh sách phòng |
+| `GET` | `/rooms/{room_id}/state` | Telemetry + Actuator state của phòng |
+| `GET` | `/rooms/{room_id}/events` | Các sự kiện bất thường |
+| `POST` | `/rooms/{room_id}/command` | Gửi lệnh điều khiển thủ công |
 
 #### Ví dụ query API
 
 ```bash
 # Kiểm tra hệ thống
-curl http://localhost:8000/
+curl http://localhost:8000/health
 
-# Xem telemetry phòng 01
-curl http://localhost:8000/api/rooms/room-01/telemetry
+# Xem danh sách phòng
+curl http://localhost:8000/rooms
 
-# Xem trạng thái actuator phòng 01
-curl http://localhost:8000/api/rooms/room-01/actuator
+# Xem telemetry + actuator state phòng 01
+curl http://localhost:8000/rooms/room-01/state
 
 # Xem events bất thường phòng 01
-curl http://localhost:8000/api/rooms/room-01/events
+curl http://localhost:8000/rooms/room-01/events
 ```
 
 ---
@@ -283,17 +282,17 @@ curl http://localhost:8000/api/rooms/room-01/events
 
 ```bash
 # Bật quạt phòng 01
-curl -X POST http://localhost:8000/api/rooms/room-01/command \
+curl -X POST http://localhost:8000/rooms/room-01/command \
   -H "Content-Type: application/json" \
   -d '{"target": "fan", "action": "on", "reason": "manual_control"}'
 
 # Tắt đèn phòng 02
-curl -X POST http://localhost:8000/api/rooms/room-02/command \
+curl -X POST http://localhost:8000/rooms/room-02/command \
   -H "Content-Type: application/json" \
   -d '{"target": "light", "action": "off", "reason": "manual_control"}'
 
 # Bật alarm phòng 03
-curl -X POST http://localhost:8000/api/rooms/room-03/command \
+curl -X POST http://localhost:8000/rooms/room-03/command \
   -H "Content-Type: application/json" \
   -d '{"target": "alarm", "action": "on", "reason": "manual_test"}'
 ```
