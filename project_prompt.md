@@ -4,7 +4,7 @@
 
 ---
 
-## 📋 PROMPT
+##  PROMPT
 
 ```
 Tôi cần bạn lập kế hoạch triển khai chi tiết cho mini-project "Virtual Smart Building Gateway" — một hệ thống IoT ảo hóa hoàn chỉnh chạy bằng Docker Compose. Hệ thống mô phỏng smart building với ít nhất 3 phòng (room-01, room-02, room-03), mỗi phòng có virtual sensor và virtual actuator, kết nối qua MQTT broker (Mosquitto), xử lý bởi virtual IoT gateway, lưu trữ vào InfluxDB, hiển thị trên Grafana dashboard, và cung cấp REST API.
@@ -140,7 +140,7 @@ mosquitto, virtual-sensor-room-01, virtual-sensor-room-02, virtual-sensor-room-0
 
 ## PHẦN B — PHÂN CÔNG SONG SONG CHO 3 THÀNH VIÊN
 
-### 🧑‍💻 THÀNH VIÊN 1: Virtual Sensor + Virtual Actuator + Thiết kế topic/message
+### ‍ THÀNH VIÊN 1: Virtual Sensor + Virtual Actuator + Thiết kế topic/message
 
 **Scope:** Toàn bộ folder `virtual_sensor/` và `virtual_actuator/`, file `docs/topic-design.md`
 
@@ -164,7 +164,7 @@ mosquitto, virtual-sensor-room-01, virtual-sensor-room-02, virtual-sensor-room-0
 
 ---
 
-### 🧑‍💻 THÀNH VIÊN 2: Virtual IoT Gateway + Rule Engine + InfluxDB
+### ‍ THÀNH VIÊN 2: Virtual IoT Gateway + Rule Engine + InfluxDB
 
 **Scope:** Toàn bộ folder `iot_gateway/`
 
@@ -193,7 +193,7 @@ mosquitto, virtual-sensor-room-01, virtual-sensor-room-02, virtual-sensor-room-0
 
 ---
 
-### 🧑‍💻 THÀNH VIÊN 3: REST API + Docker Compose + Grafana Dashboard + README
+### ‍ THÀNH VIÊN 3: REST API + Docker Compose + Grafana Dashboard + README
 
 **Scope:** Folder `gateway_api/`, file `docker-compose.yml`, `mosquitto/`, `grafana/`, `README.md`, `.env.example`
 

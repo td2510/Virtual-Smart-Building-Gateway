@@ -21,9 +21,7 @@ os.environ.setdefault("DEVICE_ID", "actuator-room-01")
 from actuator import ActuatorState
 
 
-# ============================================================
 # Tests for ActuatorState
-# ============================================================
 class TestActuatorState:
 
     def setup_method(self):
@@ -89,9 +87,7 @@ class TestActuatorState:
         assert self.state.alarm == "on"
 
 
-# ============================================================
 # Tests for Status Message Format
-# ============================================================
 class TestActuatorStatusMessage:
 
     def setup_method(self):
@@ -136,9 +132,7 @@ class TestActuatorStatusMessage:
         assert status["device_id"] == "actuator-room-01"
 
 
-# ============================================================
 # Tests for Command Format Compatibility with Gateway (M2) and API (M3)
-# ============================================================
 class TestCommandCompatibility:
     """Verify that commands from Gateway and API are properly handled."""
 

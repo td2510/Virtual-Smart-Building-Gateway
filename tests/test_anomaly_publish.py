@@ -57,7 +57,7 @@ SCENARIOS = {
 def publish_scenario(broker: str, room_id: str, scenario_name: str, port: int = 1883):
     """Publish a single anomaly scenario to MQTT."""
     if scenario_name not in SCENARIOS:
-        print(f"❌ Unknown scenario: {scenario_name}")
+        print(f" Unknown scenario: {scenario_name}")
         return
 
     client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
@@ -75,7 +75,7 @@ def publish_scenario(broker: str, room_id: str, scenario_name: str, port: int = 
 
     result = client.publish(topic, payload, qos=1)
     result.wait_for_publish()
-    print(f"✅ Published [{scenario_name}] to {topic}")
+    print(f" Published [{scenario_name}] to {topic}")
     print(f"   Payload: {payload}")
 
     client.loop_stop()
@@ -97,7 +97,7 @@ def main():
                         help="Interval between scenarios in seconds")
     args = parser.parse_args()
 
-    print(f"🔧 Anomaly Test Publisher")
+    print(f" Anomaly Test Publisher")
     print(f"   Broker: {args.broker}:{args.port}")
     print(f"   Room: {args.room}")
     print(f"   Scenario: {args.scenario}")
@@ -108,7 +108,7 @@ def main():
             print(f"\n--- Testing scenario: {name} ---")
             publish_scenario(args.broker, args.room, name, args.port)
             time.sleep(args.interval)
-        print(f"\n✅ All {len(SCENARIOS)} scenarios published!")
+        print(f"\n All {len(SCENARIOS)} scenarios published!")
     else:
         publish_scenario(args.broker, args.room, args.scenario, args.port)
 

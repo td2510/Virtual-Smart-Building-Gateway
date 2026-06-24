@@ -1,27 +1,27 @@
-# 🏢 Smart Building IoT Gateway
+#  Smart Building IoT Gateway
 
 Hệ thống Virtual IoT Gateway cho Smart Building — mô phỏng thu thập dữ liệu cảm biến,
 phát hiện bất thường và điều khiển thiết bị qua MQTT.
 
-## 📐 Kiến trúc hệ thống
+##  Kiến trúc hệ thống
 
 ```
-[Virtual Sensor x3] ──MQTT telemetry──► [Mosquitto Broker]
+[Virtual Sensor x3] ──MQTT telemetry── [Mosquitto Broker]
                                                │
                                     ┌──────────┴──────────┐
-                                    ▼                      ▼
+                                                          
                              [IoT Gateway]          [Gateway API]
                              (Rule Engine)          (REST API)
                                     │                      │
                                     └──────────┬───────────┘
-                                               ▼
+                                               
                                          [InfluxDB]
                                                │
-                                               ▼
+                                               
                                           [Grafana]
 ```
 
-## 🚀 Cách chạy
+##  Cách chạy
 
 ### Yêu cầu
 - Docker & Docker Compose
@@ -43,7 +43,7 @@ docker compose up -d --build
 docker compose ps
 ```
 
-## 📊 Truy cập các service
+##  Truy cập các service
 
 | Service | URL | Thông tin đăng nhập |
 |---|---|---|
@@ -52,7 +52,7 @@ docker compose ps
 | REST API | http://localhost:8000 | — |
 | API Docs (Swagger) | http://localhost:8000/docs | — |
 
-## 🔍 Kiểm tra log
+##  Kiểm tra log
 
 ```bash
 docker compose logs -f iot-gateway
@@ -61,7 +61,7 @@ docker compose logs -f virtual-sensor-room-01
 docker compose logs -f virtual-actuator-room-01
 ```
 
-## 📡 REST API Endpoints
+##  REST API Endpoints
 
 | Method | Endpoint | Mô tả |
 |---|---|---|
@@ -78,19 +78,19 @@ curl -X POST http://localhost:8000/rooms/room-01/command \
   -d '{"target":"fan","action":"on","reason":"manual_control"}'
 ```
 
-## 🛑 Dừng hệ thống
+##  Dừng hệ thống
 ```bash
 docker compose down
 ```
 
-## ❓ Troubleshooting
+##  Troubleshooting
 
 - **Container không start**: Kiểm tra `docker compose logs <service-name>`
 - **MQTT không kết nối**: Đảm bảo Mosquitto container đang running
 - **InfluxDB không có data**: Kiểm tra gateway logs, đảm bảo token đúng
 - **Grafana không hiện data**: Kiểm tra datasource configuration tại http://localhost:3000/connections/datasources
 
-## 👥 Phân công
+##  Phân công
 
 | Thành viên | Nhiệm vụ |
 |---|---|

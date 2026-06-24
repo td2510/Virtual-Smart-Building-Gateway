@@ -1,6 +1,6 @@
-# 🧑‍💻 THÀNH VIÊN 1: Virtual Sensor + Virtual Actuator + Topic Design
+# ‍ THÀNH VIÊN 1: Virtual Sensor + Virtual Actuator + Topic Design
 
-## 📌 Tổng quan
+##  Tổng quan
 
 | Mục | Chi tiết |
 |---|---|
@@ -14,7 +14,7 @@
 
 ---
 
-## ✅ Checklist task theo thứ tự
+##  Checklist task theo thứ tự
 
 ### Phần bắt buộc
 
@@ -33,7 +33,7 @@
 | 11 | Test kết hợp sensor + actuator (không cần gateway) | 1 giờ | `[ ]` |
 | 12 | Review code, thêm comments, cleanup | 1 giờ | `[ ]` |
 
-### ⭐ Phần nâng cao (cộng điểm khuyến khích)
+###  Phần nâng cao (cộng điểm khuyến khích)
 
 | # | Task nâng cao | Yêu cầu số | Thời gian | Trạng thái |
 |---|---|---|---|---|
@@ -43,7 +43,7 @@
 
 ---
 
-## 📐 QUY ƯỚC BẮT BUỘC (SHARED CONTRACTS)
+##  QUY ƯỚC BẮT BUỘC (SHARED CONTRACTS)
 
 ### MQTT Topics mà bạn sẽ dùng
 
@@ -72,7 +72,7 @@
 
 ---
 
-## 📁 Code Skeleton
+##  Code Skeleton
 
 ### 1. `virtual_sensor/sensor.py`
 
@@ -92,9 +92,7 @@ from datetime import datetime, timezone
 
 import paho.mqtt.client as mqtt
 
-# ============================================================
 # Configuration from environment variables
-# ============================================================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 ROOM_ID = os.getenv("ROOM_ID", "room-01")
@@ -112,9 +110,7 @@ logging.basicConfig(
 logger = logging.getLogger(DEVICE_ID)
 
 
-# ============================================================
 # Sensor Data Simulator
-# ============================================================
 class SensorSimulator:
     """
     Simulates environmental sensor data with realistic trends.
@@ -169,13 +165,13 @@ class SensorSimulator:
             ])
             if anomaly_type == "temperature_high":
                 self.temperature = round(random.uniform(31.0, 38.0), 2)
-                logger.warning(f"🔥 ANOMALY: temperature spike → {self.temperature}°C")
+                logger.warning(f" ANOMALY: temperature spike → {self.temperature}°C")
             elif anomaly_type == "co2_high":
                 self.co2_ppm = round(random.uniform(1250.0, 2000.0), 2)
-                logger.warning(f"💨 ANOMALY: CO2 spike → {self.co2_ppm} ppm")
+                logger.warning(f" ANOMALY: CO2 spike → {self.co2_ppm} ppm")
             elif anomaly_type == "humidity_high":
                 self.humidity = round(random.uniform(85.0, 98.0), 2)
-                logger.warning(f"💧 ANOMALY: humidity spike → {self.humidity}%")
+                logger.warning(f" ANOMALY: humidity spike → {self.humidity}%")
 
         # --- Build telemetry message ---
         message = {
@@ -191,23 +187,19 @@ class SensorSimulator:
         return message
 
 
-# ============================================================
 # MQTT Callbacks
-# ============================================================
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        logger.info(f"✅ Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
+        logger.info(f" Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
     else:
-        logger.error(f"❌ Failed to connect, return code: {rc}")
+        logger.error(f" Failed to connect, return code: {rc}")
 
 
 def on_disconnect(client, userdata, rc, properties=None):
-    logger.warning(f"⚠️ Disconnected from MQTT broker (rc={rc}). Reconnecting...")
+    logger.warning(f"️ Disconnected from MQTT broker (rc={rc}). Reconnecting...")
 
 
-# ============================================================
 # Main loop
-# ============================================================
 def main():
     logger.info(f"Starting Virtual Sensor: {DEVICE_ID} for {ROOM_ID}")
     logger.info(f"Publishing to topic: {TELEMETRY_TOPIC}")
@@ -242,7 +234,7 @@ def main():
 
             result = client.publish(TELEMETRY_TOPIC, payload, qos=1)
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                logger.info(f"📤 Published: temp={telemetry['temperature']}, "
+                logger.info(f" Published: temp={telemetry['temperature']}, "
                            f"humidity={telemetry['humidity']}, "
                            f"co2={telemetry['co2_ppm']}, "
                            f"light={telemetry['light_lux']}, "
@@ -280,9 +272,7 @@ from datetime import datetime, timezone
 
 import paho.mqtt.client as mqtt
 
-# ============================================================
 # Configuration from environment variables
-# ============================================================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 ROOM_ID = os.getenv("ROOM_ID", "room-01")
@@ -300,9 +290,7 @@ logging.basicConfig(
 logger = logging.getLogger(DEVICE_ID)
 
 
-# ============================================================
 # Actuator State Manager
-# ============================================================
 class ActuatorState:
     """Manages the internal state of actuator devices (fan, light, alarm)."""
 
@@ -321,12 +309,12 @@ class ActuatorState:
         Returns True if the command was valid and applied, False otherwise.
         """
         if target not in self.VALID_TARGETS:
-            logger.error(f"❌ Invalid target: '{target}'. "
+            logger.error(f" Invalid target: '{target}'. "
                         f"Valid: {self.VALID_TARGETS}")
             return False
 
         if action not in self.VALID_ACTIONS:
-            logger.error(f"❌ Invalid action: '{action}'. "
+            logger.error(f" Invalid action: '{action}'. "
                         f"Valid: {self.VALID_ACTIONS}")
             return False
 
@@ -335,7 +323,7 @@ class ActuatorState:
         self.last_command_reason = reason
 
         if old_value != action:
-            logger.info(f"🔄 {target.upper()}: {old_value} → {action} "
+            logger.info(f" {target.upper()}: {old_value} → {action} "
                        f"(reason: {reason})")
         else:
             logger.info(f"ℹ️ {target.upper()} already {action} "
@@ -356,34 +344,30 @@ class ActuatorState:
         }
 
 
-# ============================================================
 # Global state
-# ============================================================
 actuator_state = ActuatorState()
 
 
-# ============================================================
 # MQTT Callbacks
-# ============================================================
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        logger.info(f"✅ Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
+        logger.info(f" Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
         # Subscribe to command topic
         client.subscribe(COMMAND_TOPIC, qos=1)
-        logger.info(f"📥 Subscribed to: {COMMAND_TOPIC}")
+        logger.info(f" Subscribed to: {COMMAND_TOPIC}")
     else:
-        logger.error(f"❌ Failed to connect, return code: {rc}")
+        logger.error(f" Failed to connect, return code: {rc}")
 
 
 def on_disconnect(client, userdata, rc, properties=None):
-    logger.warning(f"⚠️ Disconnected (rc={rc}). Will auto-reconnect.")
+    logger.warning(f"️ Disconnected (rc={rc}). Will auto-reconnect.")
 
 
 def on_message(client, userdata, msg):
     """Handle incoming command messages."""
     try:
         payload = msg.payload.decode("utf-8")
-        logger.info(f"📩 Received command on {msg.topic}: {payload}")
+        logger.info(f" Received command on {msg.topic}: {payload}")
 
         command = json.loads(payload)
 
@@ -391,12 +375,12 @@ def on_message(client, userdata, msg):
         required_fields = ["room_id", "target", "action"]
         for field in required_fields:
             if field not in command:
-                logger.error(f"❌ Missing required field: '{field}' in command")
+                logger.error(f" Missing required field: '{field}' in command")
                 return
 
         # Validate room_id matches
         if command["room_id"] != ROOM_ID:
-            logger.warning(f"⚠️ Command for {command['room_id']}, "
+            logger.warning(f"️ Command for {command['room_id']}, "
                           f"but I am {ROOM_ID}. Ignoring.")
             return
 
@@ -412,17 +396,15 @@ def on_message(client, userdata, msg):
             status = actuator_state.to_status_message()
             status_payload = json.dumps(status)
             client.publish(STATUS_TOPIC, status_payload, qos=1)
-            logger.info(f"📤 Published status to {STATUS_TOPIC}")
+            logger.info(f" Published status to {STATUS_TOPIC}")
 
     except json.JSONDecodeError:
-        logger.error(f"❌ Invalid JSON received: {msg.payload}")
+        logger.error(f" Invalid JSON received: {msg.payload}")
     except Exception as e:
-        logger.error(f"❌ Error processing command: {e}")
+        logger.error(f" Error processing command: {e}")
 
 
-# ============================================================
 # Main
-# ============================================================
 def main():
     logger.info(f"Starting Virtual Actuator: {DEVICE_ID} for {ROOM_ID}")
     logger.info(f"Listening on topic: {COMMAND_TOPIC}")
@@ -527,7 +509,7 @@ CMD ["python", "-u", "actuator.py"]
 
 ---
 
-## 🧪 Hướng dẫn Test Độc Lập
+##  Hướng dẫn Test Độc Lập
 
 Bạn có thể test mà **KHÔNG cần** code của TV2 và TV3. Chỉ cần một Mosquitto broker.
 
@@ -551,10 +533,10 @@ MQTT_BROKER=localhost ROOM_ID=room-01 DEVICE_ID=sensor-room-01 PUBLISH_INTERVAL=
 ```
 
 **Kiểm tra:**
-- ✅ Terminal 1 nhận được JSON message mỗi 3 giây
-- ✅ Dữ liệu có biến động nhẹ (không random hoàn toàn)
-- ✅ Thỉnh thoảng (~10%) có spike bất thường
-- ✅ JSON format đúng shared contract
+-  Terminal 1 nhận được JSON message mỗi 3 giây
+-  Dữ liệu có biến động nhẹ (không random hoàn toàn)
+-  Thỉnh thoảng (~10%) có spike bất thường
+-  JSON format đúng shared contract
 
 ### Bước 3: Test Virtual Actuator
 
@@ -573,9 +555,9 @@ mosquitto_pub -h localhost -t "building/room-01/actuator/command" \
 ```
 
 **Kiểm tra:**
-- ✅ Actuator log hiển thị nhận command
-- ✅ Terminal 2 nhận được status message với `fan: "on"`
-- ✅ Gửi command sai format → actuator log lỗi rõ ràng, không crash
+-  Actuator log hiển thị nhận command
+-  Terminal 2 nhận được status message với `fan: "on"`
+-  Gửi command sai format → actuator log lỗi rõ ràng, không crash
 
 ### Bước 4: Test kết hợp Sensor + Actuator (không cần Gateway)
 
@@ -600,7 +582,7 @@ docker run --rm -e MQTT_BROKER=host.docker.internal -e ROOM_ID=room-01 -e DEVICE
 
 ---
 
-## 📅 Timeline gợi ý (trong 1 tuần)
+##  Timeline gợi ý (trong 1 tuần)
 
 | Ngày | Công việc |
 |---|---|
@@ -608,12 +590,12 @@ docker run --rm -e MQTT_BROKER=host.docker.internal -e ROOM_ID=room-01 -e DEVICE
 | **Ngày 2** | Code `sensor.py` hoàn chỉnh (bao gồm `last_seen` + reconnect logic). Test với mosquitto_sub. |
 | **Ngày 3** | Code `actuator.py` hoàn chỉnh. Test với mosquitto_pub. |
 | **Ngày 4** | Viết Dockerfile cho cả 2. Test Docker build. Fix bugs. |
-| **Ngày 5** | ⭐ Viết `test_anomaly_publish.py`. Test kết hợp sensor + actuator. Review code. |
+| **Ngày 5** |  Viết `test_anomaly_publish.py`. Test kết hợp sensor + actuator. Review code. |
 | **Ngày 6–7** | **TÍCH HỢP** với TV2 và TV3. Debug hệ thống. Chụp screenshot. |
 
 ---
 
-## 🔗 Integration Checklist (khi merge với TV2, TV3)
+##  Integration Checklist (khi merge với TV2, TV3)
 
 Khi tích hợp code với cả nhóm, kiểm tra:
 
@@ -634,7 +616,7 @@ Khi tích hợp code với cả nhóm, kiểm tra:
 
 ---
 
-## ⭐ NÂNG CAO — Code bổ sung
+##  NÂNG CAO — Code bổ sung
 
 ### [Nâng cao #10] Cơ chế mô phỏng mất kết nối + Reconnect
 
@@ -645,7 +627,7 @@ Thêm vào `sensor.py` — thay thế phần `main()` để hỗ trợ reconnect
 
 def on_disconnect(client, userdata, rc, properties=None):
     """Handle MQTT disconnection and trigger reconnect loop."""
-    logger.warning(f"⚠️ Disconnected (rc={rc}). Will reconnect in 5s...")
+    logger.warning(f"️ Disconnected (rc={rc}). Will reconnect in 5s...")
     # paho-mqtt tự động reconnect nếu dùng loop_forever() với reconnect_delay_set
 
 # Trong main(), trước client.connect():
@@ -752,7 +734,7 @@ SCENARIOS = {
 def publish_scenario(broker: str, room_id: str, scenario_name: str, port: int = 1883):
     """Publish a single anomaly scenario to MQTT."""
     if scenario_name not in SCENARIOS:
-        print(f"❌ Unknown scenario: {scenario_name}")
+        print(f" Unknown scenario: {scenario_name}")
         return
 
     client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
@@ -769,7 +751,7 @@ def publish_scenario(broker: str, room_id: str, scenario_name: str, port: int = 
 
     result = client.publish(topic, payload, qos=1)
     result.wait_for_publish()
-    print(f"✅ Published [{scenario_name}] to {topic}")
+    print(f" Published [{scenario_name}] to {topic}")
     print(f"   Payload: {payload}")
 
     client.loop_stop()
@@ -819,6 +801,6 @@ done
 ```
 
 **Kiểm tra:**
-- ✅ Sau khi chạy script, gateway (TV2) phải log event tương ứng
-- ✅ Command được gửi đến actuator topic
-- ✅ InfluxDB có event data trong `gateway_events`
+-  Sau khi chạy script, gateway (TV2) phải log event tương ứng
+-  Command được gửi đến actuator topic
+-  InfluxDB có event data trong `gateway_events`

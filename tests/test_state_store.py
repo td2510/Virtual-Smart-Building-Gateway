@@ -14,9 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "iot_gateway"))
 from state_store import StateStore, RoomState
 
 
-# ============================================================
 # Tests for RoomState
-# ============================================================
 class TestRoomState:
 
     def test_initial_state(self):
@@ -99,9 +97,7 @@ class TestRoomState:
         assert room.alarm == "off"  # default preserved
 
 
-# ============================================================
 # Tests for StateStore
-# ============================================================
 class TestStateStore:
 
     def test_empty_store(self):

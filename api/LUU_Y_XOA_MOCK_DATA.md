@@ -1,4 +1,4 @@
-# ⚠️ LƯU Ý QUAN TRỌNG: CHUYỂN GIAO TỪ MÔ PHỎNG SANG CHẠY THẬT
+# ️ LƯU Ý QUAN TRỌNG: CHUYỂN GIAO TỪ MÔ PHỎNG SANG CHẠY THẬT
 
 File này giúp bạn phân biệt rõ **đâu là công cụ dùng tạm để test** và **đâu là công việc cần làm khi ráp code thật** với Thành viên 1 và 2.
 
@@ -34,7 +34,7 @@ rm gateway_api/test_mock_data.py
 
 ### Bước 3: Sửa lại tên thư mục trong `docker-compose.yml` (Nếu cần)
 Mở file `docker-compose.yml`, kiểm tra lại phần `build: ./virtual_sensor` và `build: ./iot_gateway`. 
-👉 Hãy hỏi TV1 và TV2 xem họ đặt tên thư mục code là gì, và sửa lại cho đúng ở file này (như đã note TODO trong file).
+ Hãy hỏi TV1 và TV2 xem họ đặt tên thư mục code là gì, và sửa lại cho đúng ở file này (như đã note TODO trong file).
 
 ### Bước 4: Khởi động hệ thống thật
 Khi mọi thứ đã chuẩn xác, hãy gọi toàn bộ hệ thống dậy:

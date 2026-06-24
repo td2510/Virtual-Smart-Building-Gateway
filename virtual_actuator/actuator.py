@@ -18,9 +18,7 @@ from datetime import datetime, timezone
 
 import paho.mqtt.client as mqtt
 
-# ============================================================
 # Configuration from environment variables
-# ============================================================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 ROOM_ID = os.getenv("ROOM_ID", "room-01")
@@ -38,9 +36,7 @@ logging.basicConfig(
 logger = logging.getLogger(DEVICE_ID)
 
 
-# ============================================================
 # Actuator State Manager
-# ============================================================
 class ActuatorState:
     """Manages the internal state of actuator devices (fan, light, alarm)."""
 
@@ -59,12 +55,12 @@ class ActuatorState:
         Returns True if the command was valid and applied, False otherwise.
         """
         if target not in self.VALID_TARGETS:
-            logger.error(f"❌ Invalid target: '{target}'. "
+            logger.error(f" Invalid target: '{target}'. "
                         f"Valid: {self.VALID_TARGETS}")
             return False
 
         if action not in self.VALID_ACTIONS:
-            logger.error(f"❌ Invalid action: '{action}'. "
+            logger.error(f" Invalid action: '{action}'. "
                         f"Valid: {self.VALID_ACTIONS}")
             return False
 
@@ -73,7 +69,7 @@ class ActuatorState:
         self.last_command_reason = reason
 
         if old_value != action:
-            logger.info(f"🔄 {target.upper()}: {old_value} → {action} "
+            logger.info(f" {target.upper()}: {old_value} → {action} "
                        f"(reason: {reason})")
         else:
             logger.info(f"ℹ️ {target.upper()} already {action} "
@@ -94,34 +90,30 @@ class ActuatorState:
         }
 
 
-# ============================================================
 # Global state
-# ============================================================
 actuator_state = ActuatorState()
 
 
-# ============================================================
 # MQTT Callbacks
-# ============================================================
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        logger.info(f"✅ Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
+        logger.info(f" Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
         # Subscribe to command topic
         client.subscribe(COMMAND_TOPIC, qos=1)
-        logger.info(f"📥 Subscribed to: {COMMAND_TOPIC}")
+        logger.info(f" Subscribed to: {COMMAND_TOPIC}")
     else:
-        logger.error(f"❌ Failed to connect, return code: {rc}")
+        logger.error(f" Failed to connect, return code: {rc}")
 
 
 def on_disconnect(client, userdata, rc, properties=None):
-    logger.warning(f"⚠️ Disconnected (rc={rc}). Will auto-reconnect.")
+    logger.warning(f"️ Disconnected (rc={rc}). Will auto-reconnect.")
 
 
 def on_message(client, userdata, msg):
     """Handle incoming command messages."""
     try:
         payload = msg.payload.decode("utf-8")
-        logger.info(f"📩 Received command on {msg.topic}: {payload}")
+        logger.info(f" Received command on {msg.topic}: {payload}")
 
         command = json.loads(payload)
 
@@ -129,12 +121,12 @@ def on_message(client, userdata, msg):
         required_fields = ["room_id", "target", "action"]
         for field in required_fields:
             if field not in command:
-                logger.error(f"❌ Missing required field: '{field}' in command")
+                logger.error(f" Missing required field: '{field}' in command")
                 return
 
         # Validate room_id matches
         if command["room_id"] != ROOM_ID:
-            logger.warning(f"⚠️ Command for {command['room_id']}, "
+            logger.warning(f"️ Command for {command['room_id']}, "
                           f"but I am {ROOM_ID}. Ignoring.")
             return
 
@@ -150,17 +142,15 @@ def on_message(client, userdata, msg):
             status = actuator_state.to_status_message()
             status_payload = json.dumps(status)
             client.publish(STATUS_TOPIC, status_payload, qos=1)
-            logger.info(f"📤 Published status to {STATUS_TOPIC}")
+            logger.info(f" Published status to {STATUS_TOPIC}")
 
     except json.JSONDecodeError:
-        logger.error(f"❌ Invalid JSON received: {msg.payload}")
+        logger.error(f" Invalid JSON received: {msg.payload}")
     except Exception as e:
-        logger.error(f"❌ Error processing command: {e}")
+        logger.error(f" Error processing command: {e}")
 
 
-# ============================================================
 # Main
-# ============================================================
 def main():
     logger.info(f"Starting Virtual Actuator: {DEVICE_ID} for {ROOM_ID}")
     logger.info(f"Listening on topic: {COMMAND_TOPIC}")

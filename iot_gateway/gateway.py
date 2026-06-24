@@ -22,9 +22,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 from rule_engine import evaluate
 from state_store import StateStore
 
-# ============================================================
 # Configuration from environment variables
-# ============================================================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 
@@ -44,17 +42,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("iot-gateway")
 
-# ============================================================
 # Global instances
-# ============================================================
 state_store = StateStore()
 influx_client = None
 write_api = None
 
 
-# ============================================================
 # InfluxDB Setup
-# ============================================================
 def init_influxdb():
     """Initialize InfluxDB client with retry logic."""
     global influx_client, write_api
@@ -68,7 +62,7 @@ def init_influxdb():
             write_api = influx_client.write_api(write_options=SYNCHRONOUS)
             # Test connection by pinging
             influx_client.ping()
-            logger.info(f"✅ Connected to InfluxDB at {INFLUXDB_URL}")
+            logger.info(f" Connected to InfluxDB at {INFLUXDB_URL}")
             return
         except Exception as e:
             logger.error(f"InfluxDB connection failed: {e}. Retrying in 5s...")
@@ -89,7 +83,7 @@ def write_telemetry(room_id: str, device_id: str, data: dict):
             .field("occupancy", bool(data["occupancy"]))
         )
         write_api.write(bucket=INFLUXDB_BUCKET, record=point)
-        logger.debug(f"📊 Wrote telemetry for {room_id}")
+        logger.debug(f" Wrote telemetry for {room_id}")
     except Exception as e:
         logger.error(f"Failed to write telemetry: {e}")
 
@@ -107,7 +101,7 @@ def write_event(event: dict):
             .field("action_taken", str(event["action_taken"]))
         )
         write_api.write(bucket=INFLUXDB_BUCKET, record=point)
-        logger.debug(f"📊 Wrote event: {event['event_type']} for {event['room_id']}")
+        logger.debug(f" Wrote event: {event['event_type']} for {event['room_id']}")
     except Exception as e:
         logger.error(f"Failed to write event: {e}")
 
@@ -124,14 +118,12 @@ def write_actuator_status(room_id: str, device_id: str, data: dict):
             .field("alarm", str(data.get("alarm", "off")))
         )
         write_api.write(bucket=INFLUXDB_BUCKET, record=point)
-        logger.debug(f"📊 Wrote actuator status for {room_id}")
+        logger.debug(f" Wrote actuator status for {room_id}")
     except Exception as e:
         logger.error(f"Failed to write actuator status: {e}")
 
 
-# ============================================================
 # Message Validation & Normalization
-# ============================================================
 REQUIRED_TELEMETRY_FIELDS = [
     "device_id", "room_id", "temperature", "humidity",
     "light_lux", "co2_ppm", "occupancy", "timestamp"
@@ -142,7 +134,7 @@ def validate_telemetry(data: dict) -> bool:
     """Validate a telemetry message has all required fields and correct types."""
     for field in REQUIRED_TELEMETRY_FIELDS:
         if field not in data:
-            logger.warning(f"⚠️ Missing field '{field}' in telemetry message")
+            logger.warning(f"️ Missing field '{field}' in telemetry message")
             return False
 
     # Validate data types
@@ -155,10 +147,10 @@ def validate_telemetry(data: dict) -> bool:
         if not isinstance(data["occupancy"], bool):
             # Accept 0/1 as boolean
             if data["occupancy"] not in (0, 1, True, False):
-                logger.warning(f"⚠️ Invalid occupancy value: {data['occupancy']}")
+                logger.warning(f"️ Invalid occupancy value: {data['occupancy']}")
                 return False
     except (ValueError, TypeError) as e:
-        logger.warning(f"⚠️ Invalid data type in telemetry: {e}")
+        logger.warning(f"️ Invalid data type in telemetry: {e}")
         return False
 
     return True
@@ -180,24 +172,22 @@ def normalize_telemetry(data: dict) -> dict:
     }
 
 
-# ============================================================
 # MQTT Callbacks
-# ============================================================
 def on_connect(client, userdata, flags, rc, properties=None):
     """Handle MQTT connection. Subscribe to telemetry and actuator status topics."""
     if rc == 0:
-        logger.info(f"✅ Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
+        logger.info(f" Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
         client.subscribe(TELEMETRY_TOPIC, qos=1)
         client.subscribe(ACTUATOR_STATUS_TOPIC, qos=1)
-        logger.info(f"📥 Subscribed to: {TELEMETRY_TOPIC}")
-        logger.info(f"📥 Subscribed to: {ACTUATOR_STATUS_TOPIC}")
+        logger.info(f" Subscribed to: {TELEMETRY_TOPIC}")
+        logger.info(f" Subscribed to: {ACTUATOR_STATUS_TOPIC}")
     else:
-        logger.error(f"❌ Connection failed (rc={rc})")
+        logger.error(f" Connection failed (rc={rc})")
 
 
 def on_disconnect(client, userdata, rc, properties=None):
     """Handle MQTT disconnection."""
-    logger.warning(f"⚠️ Disconnected (rc={rc}). Reconnecting...")
+    logger.warning(f"️ Disconnected (rc={rc}). Reconnecting...")
 
 
 def on_message(client, userdata, msg):
@@ -214,9 +204,9 @@ def on_message(client, userdata, msg):
             logger.warning(f"Unknown topic: {topic}")
 
     except json.JSONDecodeError:
-        logger.error(f"❌ Invalid JSON on {msg.topic}: {msg.payload}")
+        logger.error(f" Invalid JSON on {msg.topic}: {msg.payload}")
     except Exception as e:
-        logger.error(f"❌ Error handling message on {msg.topic}: {e}")
+        logger.error(f" Error handling message on {msg.topic}: {e}")
 
 
 def handle_telemetry(client, topic: str, data: dict):
@@ -228,12 +218,12 @@ def handle_telemetry(client, topic: str, data: dict):
     room_id = data.get("room_id", "unknown")
     device_id = data.get("device_id", "unknown")
 
-    logger.info(f"📩 Telemetry from {room_id}: temp={data.get('temperature')}, "
+    logger.info(f" Telemetry from {room_id}: temp={data.get('temperature')}, "
                f"co2={data.get('co2_ppm')}, occupancy={data.get('occupancy')}")
 
     # Step 1: Validate
     if not validate_telemetry(data):
-        logger.warning(f"⚠️ Dropping invalid telemetry from {room_id}")
+        logger.warning(f"️ Dropping invalid telemetry from {room_id}")
         return
 
     # Step 2: Normalize
@@ -264,14 +254,14 @@ def handle_telemetry(client, topic: str, data: dict):
         write_event(event)
         event_topic = f"building/{room_id}/gateway/event"
         client.publish(event_topic, json.dumps(event), qos=1)
-        logger.warning(f"🚨 Event: {event['event_type']} in {room_id} "
+        logger.warning(f" Event: {event['event_type']} in {room_id} "
                       f"(severity={event['severity']})")
 
     # Step 8: Send commands to actuators via MQTT
     for command in commands:
         cmd_topic = f"building/{room_id}/actuator/command"
         client.publish(cmd_topic, json.dumps(command), qos=1)
-        logger.info(f"📤 Command sent to {room_id}: "
+        logger.info(f" Command sent to {room_id}: "
                    f"{command['target']}={command['action']} "
                    f"(reason={command['reason']})")
 
@@ -281,7 +271,7 @@ def handle_actuator_status(client, topic: str, data: dict):
     room_id = data.get("room_id", "unknown")
     device_id = data.get("device_id", "unknown")
 
-    logger.info(f"📩 Actuator status from {room_id}: "
+    logger.info(f" Actuator status from {room_id}: "
                f"fan={data.get('fan')}, light={data.get('light')}, "
                f"alarm={data.get('alarm')}")
 
@@ -292,9 +282,7 @@ def handle_actuator_status(client, topic: str, data: dict):
     write_actuator_status(room_id, device_id, data)
 
 
-# ============================================================
 # Main
-# ============================================================
 def main():
     logger.info("=" * 60)
     logger.info("Starting Virtual IoT Gateway for Smart Building")

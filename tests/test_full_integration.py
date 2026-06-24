@@ -30,9 +30,7 @@ from state_store import StateStore
 KNOWN_ROOMS = ["room-01", "room-02", "room-03"]
 
 
-# ============================================================
 # Test: Sensor → Gateway Telemetry Contract
-# ============================================================
 class TestSensorToGateway:
     """Verify Sensor (M1) output is compatible with Gateway (M2) input."""
 
@@ -108,9 +106,7 @@ class TestSensorToGateway:
         assert len(commands) == 0
 
 
-# ============================================================
 # Test: Gateway → Actuator Command Contract
-# ============================================================
 class TestGatewayToActuator:
     """Verify Gateway (M2) commands are compatible with Actuator (M1)."""
 
@@ -215,9 +211,7 @@ class TestGatewayToActuator:
         assert state["actuator"]["fan"] == "on"
 
 
-# ============================================================
 # Test: Actuator → Gateway → InfluxDB → API
-# ============================================================
 class TestActuatorToGatewayToAPI:
     """Verify the Actuator status → Gateway → StateStore → API chain."""
 
@@ -237,9 +231,7 @@ class TestActuatorToGatewayToAPI:
         assert state["actuator"]["light"] == "off"
 
 
-# ============================================================
 # Test: End-to-End Flow (Sensor → Gateway → Actuator → Status → Store)
-# ============================================================
 class TestEndToEndAllMembers:
     """
     Simulate the complete system flow without MQTT/InfluxDB.
@@ -426,9 +418,7 @@ class TestEndToEndAllMembers:
         assert len(store.get_all_rooms()) == 3
 
 
-# ============================================================
 # Test: Docker Compose Integration Points
-# ============================================================
 class TestDockerComposeCompatibility:
     """
     Verify that the docker-compose.yml references match actual folder structure

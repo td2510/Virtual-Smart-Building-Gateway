@@ -1,6 +1,6 @@
-# 🧑‍💻 THÀNH VIÊN 2: Virtual IoT Gateway + Rule Engine + InfluxDB
+# ‍ THÀNH VIÊN 2: Virtual IoT Gateway + Rule Engine + InfluxDB
 
-## 📌 Tổng quan
+##  Tổng quan
 
 | Mục | Chi tiết |
 |---|---|
@@ -17,7 +17,7 @@
 
 ---
 
-## ✅ Checklist task theo thứ tự
+##  Checklist task theo thứ tự
 
 ### Phần bắt buộc
 
@@ -36,7 +36,7 @@
 | 11 | Test rule engine phát hiện bất thường | 1 giờ | `[ ]` |
 | 12 | Review code, thêm comments, cleanup | 1 giờ | `[ ]` |
 
-### ⭐ Phần nâng cao (cộng điểm khuyến khích)
+###  Phần nâng cao (cộng điểm khuyến khích)
 
 | # | Task nâng cao | Yêu cầu số | Thời gian | Trạng thái |
 |---|---|---|---|---|
@@ -47,7 +47,7 @@
 
 ---
 
-## 📐 QUY ƯỚC BẮT BUỘC (SHARED CONTRACTS)
+##  QUY ƯỚC BẮT BUỘC (SHARED CONTRACTS)
 
 ### MQTT Topics mà bạn sẽ dùng
 
@@ -87,7 +87,7 @@
 
 ---
 
-## 📁 Code Skeleton
+##  Code Skeleton
 
 ### 1. `iot_gateway/state_store.py`
 
@@ -261,9 +261,7 @@ def _make_command(room_id: str, target: str, action: str,
     }
 
 
-# ============================================================
 # Rule Definitions
-# ============================================================
 
 def rule_temperature_high(room_id: str, data: dict,
                           actuator_state: dict) -> RuleResult:
@@ -274,7 +272,7 @@ def rule_temperature_high(room_id: str, data: dict,
     if temp > threshold:
         # Only trigger if fan is not already ON
         if actuator_state.get("fan") != "on":
-            logger.info(f"🔥 Rule triggered: temperature_high in {room_id} "
+            logger.info(f" Rule triggered: temperature_high in {room_id} "
                        f"(value={temp}, threshold={threshold})")
             return RuleResult(
                 triggered=True,
@@ -294,7 +292,7 @@ def rule_temperature_low(room_id: str, data: dict,
 
     if temp < threshold:
         if actuator_state.get("fan") != "off":
-            logger.info(f"❄️ Rule triggered: temperature_low in {room_id} "
+            logger.info(f"️ Rule triggered: temperature_low in {room_id} "
                        f"(value={temp}, threshold={threshold})")
             return RuleResult(
                 triggered=True,
@@ -314,7 +312,7 @@ def rule_co2_high(room_id: str, data: dict,
 
     if co2 > threshold:
         if actuator_state.get("alarm") != "on":
-            logger.warning(f"💨 Rule triggered: co2_high in {room_id} "
+            logger.warning(f" Rule triggered: co2_high in {room_id} "
                           f"(value={co2}, threshold={threshold})")
             return RuleResult(
                 triggered=True,
@@ -334,7 +332,7 @@ def rule_unnecessary_light(room_id: str, data: dict,
 
     if not occupancy and light_lux > threshold:
         if actuator_state.get("light") != "off":
-            logger.info(f"💡 Rule triggered: unnecessary_light in {room_id} "
+            logger.info(f" Rule triggered: unnecessary_light in {room_id} "
                        f"(occupancy=false, light_lux={light_lux})")
             return RuleResult(
                 triggered=True,
@@ -346,9 +344,7 @@ def rule_unnecessary_light(room_id: str, data: dict,
     return RuleResult(triggered=False)
 
 
-# ============================================================
 # Rules Registry (extensible — just append new functions)
-# ============================================================
 RULES = [
     rule_temperature_high,
     rule_temperature_low,
@@ -357,9 +353,7 @@ RULES = [
 ]
 
 
-# ============================================================
 # Main evaluation function
-# ============================================================
 def evaluate(room_id: str, telemetry_data: dict,
              actuator_state: dict) -> tuple[list[dict], list[dict]]:
     """
@@ -414,9 +408,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 from rule_engine import evaluate
 from state_store import StateStore
 
-# ============================================================
 # Configuration
-# ============================================================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 
@@ -436,17 +428,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("iot-gateway")
 
-# ============================================================
 # Global instances
-# ============================================================
 state_store = StateStore()
 influx_client = None
 write_api = None
 
 
-# ============================================================
 # InfluxDB Setup
-# ============================================================
 def init_influxdb():
     """Initialize InfluxDB client with retry."""
     global influx_client, write_api
@@ -460,7 +448,7 @@ def init_influxdb():
             write_api = influx_client.write_api(write_options=SYNCHRONOUS)
             # Test connection
             influx_client.ping()
-            logger.info(f"✅ Connected to InfluxDB at {INFLUXDB_URL}")
+            logger.info(f" Connected to InfluxDB at {INFLUXDB_URL}")
             return
         except Exception as e:
             logger.error(f"InfluxDB connection failed: {e}. Retrying in 5s...")
@@ -481,7 +469,7 @@ def write_telemetry(room_id: str, device_id: str, data: dict):
             .field("occupancy", bool(data["occupancy"]))
         )
         write_api.write(bucket=INFLUXDB_BUCKET, record=point)
-        logger.debug(f"📊 Wrote telemetry for {room_id}")
+        logger.debug(f" Wrote telemetry for {room_id}")
     except Exception as e:
         logger.error(f"Failed to write telemetry: {e}")
 
@@ -499,7 +487,7 @@ def write_event(event: dict):
             .field("action_taken", str(event["action_taken"]))
         )
         write_api.write(bucket=INFLUXDB_BUCKET, record=point)
-        logger.debug(f"📊 Wrote event: {event['event_type']} for {event['room_id']}")
+        logger.debug(f" Wrote event: {event['event_type']} for {event['room_id']}")
     except Exception as e:
         logger.error(f"Failed to write event: {e}")
 
@@ -516,14 +504,12 @@ def write_actuator_status(room_id: str, device_id: str, data: dict):
             .field("alarm", str(data.get("alarm", "off")))
         )
         write_api.write(bucket=INFLUXDB_BUCKET, record=point)
-        logger.debug(f"📊 Wrote actuator status for {room_id}")
+        logger.debug(f" Wrote actuator status for {room_id}")
     except Exception as e:
         logger.error(f"Failed to write actuator status: {e}")
 
 
-# ============================================================
 # Message Validation & Normalization
-# ============================================================
 REQUIRED_TELEMETRY_FIELDS = [
     "device_id", "room_id", "temperature", "humidity",
     "light_lux", "co2_ppm", "occupancy", "timestamp"
@@ -534,7 +520,7 @@ def validate_telemetry(data: dict) -> bool:
     """Validate a telemetry message has all required fields."""
     for field in REQUIRED_TELEMETRY_FIELDS:
         if field not in data:
-            logger.warning(f"⚠️ Missing field '{field}' in telemetry message")
+            logger.warning(f"️ Missing field '{field}' in telemetry message")
             return False
 
     # Validate data types
@@ -545,7 +531,7 @@ def validate_telemetry(data: dict) -> bool:
         float(data["co2_ppm"])
         bool(data["occupancy"])
     except (ValueError, TypeError) as e:
-        logger.warning(f"⚠️ Invalid data type in telemetry: {e}")
+        logger.warning(f"️ Invalid data type in telemetry: {e}")
         return False
 
     return True
@@ -567,22 +553,20 @@ def normalize_telemetry(data: dict) -> dict:
     }
 
 
-# ============================================================
 # MQTT Callbacks
-# ============================================================
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        logger.info(f"✅ Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
+        logger.info(f" Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
         client.subscribe(TELEMETRY_TOPIC, qos=1)
         client.subscribe(ACTUATOR_STATUS_TOPIC, qos=1)
-        logger.info(f"📥 Subscribed to: {TELEMETRY_TOPIC}")
-        logger.info(f"📥 Subscribed to: {ACTUATOR_STATUS_TOPIC}")
+        logger.info(f" Subscribed to: {TELEMETRY_TOPIC}")
+        logger.info(f" Subscribed to: {ACTUATOR_STATUS_TOPIC}")
     else:
-        logger.error(f"❌ Connection failed (rc={rc})")
+        logger.error(f" Connection failed (rc={rc})")
 
 
 def on_disconnect(client, userdata, rc, properties=None):
-    logger.warning(f"⚠️ Disconnected (rc={rc}). Reconnecting...")
+    logger.warning(f"️ Disconnected (rc={rc}). Reconnecting...")
 
 
 def on_message(client, userdata, msg):
@@ -599,9 +583,9 @@ def on_message(client, userdata, msg):
             logger.warning(f"Unknown topic: {topic}")
 
     except json.JSONDecodeError:
-        logger.error(f"❌ Invalid JSON on {msg.topic}: {msg.payload}")
+        logger.error(f" Invalid JSON on {msg.topic}: {msg.payload}")
     except Exception as e:
-        logger.error(f"❌ Error handling message on {msg.topic}: {e}")
+        logger.error(f" Error handling message on {msg.topic}: {e}")
 
 
 def handle_telemetry(client, topic: str, data: dict):
@@ -609,12 +593,12 @@ def handle_telemetry(client, topic: str, data: dict):
     room_id = data.get("room_id", "unknown")
     device_id = data.get("device_id", "unknown")
 
-    logger.info(f"📩 Telemetry from {room_id}: temp={data.get('temperature')}, "
+    logger.info(f" Telemetry from {room_id}: temp={data.get('temperature')}, "
                f"co2={data.get('co2_ppm')}, occupancy={data.get('occupancy')}")
 
     # Step 1: Validate
     if not validate_telemetry(data):
-        logger.warning(f"⚠️ Dropping invalid telemetry from {room_id}")
+        logger.warning(f"️ Dropping invalid telemetry from {room_id}")
         return
 
     # Step 2: Normalize
@@ -647,14 +631,14 @@ def handle_telemetry(client, topic: str, data: dict):
         # Publish event to MQTT
         event_topic = f"building/{room_id}/gateway/event"
         client.publish(event_topic, json.dumps(event), qos=1)
-        logger.warning(f"🚨 Event: {event['event_type']} in {room_id} "
+        logger.warning(f" Event: {event['event_type']} in {room_id} "
                       f"(severity={event['severity']})")
 
     # Step 8: Send commands to actuators
     for command in commands:
         cmd_topic = f"building/{room_id}/actuator/command"
         client.publish(cmd_topic, json.dumps(command), qos=1)
-        logger.info(f"📤 Command sent to {room_id}: "
+        logger.info(f" Command sent to {room_id}: "
                    f"{command['target']}={command['action']} "
                    f"(reason={command['reason']})")
 
@@ -664,7 +648,7 @@ def handle_actuator_status(client, topic: str, data: dict):
     room_id = data.get("room_id", "unknown")
     device_id = data.get("device_id", "unknown")
 
-    logger.info(f"📩 Actuator status from {room_id}: "
+    logger.info(f" Actuator status from {room_id}: "
                f"fan={data.get('fan')}, light={data.get('light')}, "
                f"alarm={data.get('alarm')}")
 
@@ -675,9 +659,7 @@ def handle_actuator_status(client, topic: str, data: dict):
     write_actuator_status(room_id, device_id, data)
 
 
-# ============================================================
 # Main
-# ============================================================
 def main():
     logger.info("=" * 60)
     logger.info("Starting Virtual IoT Gateway for Smart Building")
@@ -738,7 +720,7 @@ CMD ["python", "-u", "gateway.py"]
 
 ---
 
-## 🧪 Hướng dẫn Test Độc Lập
+##  Hướng dẫn Test Độc Lập
 
 Bạn có thể test mà **KHÔNG cần** code của TV1 (sensor/actuator) và TV3 (API). Dùng `mosquitto_pub` giả lập sensor.
 
@@ -808,11 +790,11 @@ mosquitto_sub -h localhost -t "building/+/gateway/event" -v
 ```
 
 **Kiểm tra:**
-- ✅ Gateway log hiển thị nhận telemetry
-- ✅ Khi temperature > 30: có event `temperature_high` và command `fan ON`
-- ✅ Khi co2 > 1200: có event `co2_high` và command `alarm ON`
-- ✅ InfluxDB có dữ liệu trong 3 measurements
-- ✅ Message sai format → gateway log warning, không crash
+-  Gateway log hiển thị nhận telemetry
+-  Khi temperature > 30: có event `temperature_high` và command `fan ON`
+-  Khi co2 > 1200: có event `co2_high` và command `alarm ON`
+-  InfluxDB có dữ liệu trong 3 measurements
+-  Message sai format → gateway log warning, không crash
 
 ### Bước 5: Giả lập actuator status
 
@@ -821,24 +803,24 @@ mosquitto_pub -h localhost -t "building/room-01/actuator/status" \
   -m '{"device_id":"actuator-room-01","room_id":"room-01","fan":"on","light":"off","alarm":"off","last_command_reason":"temperature_high","timestamp":"2026-06-10T10:00:06Z"}'
 ```
 
-- ✅ Gateway ghi actuator_status vào InfluxDB
+-  Gateway ghi actuator_status vào InfluxDB
 
 ---
 
-## 📅 Timeline gợi ý (trong 1 tuần)
+##  Timeline gợi ý (trong 1 tuần)
 
 | Ngày | Công việc |
 |---|---|
 | **Ngày 1** | Đọc hiểu đề bài + shared contracts. Setup Mosquitto + InfluxDB local. |
-| **Ngày 2** | Code `state_store.py` + `rule_engine.py`. ⭐ Viết unit test `test_rule_engine.py`. |
+| **Ngày 2** | Code `state_store.py` + `rule_engine.py`.  Viết unit test `test_rule_engine.py`. |
 | **Ngày 3** | Code `gateway.py` — MQTT subscribe/publish + validate/normalize. |
-| **Ngày 4** | Tích hợp InfluxDB writer. ⭐ Thêm cơ chế sensor offline detection + actuator ack timeout. |
+| **Ngày 4** | Tích hợp InfluxDB writer.  Thêm cơ chế sensor offline detection + actuator ack timeout. |
 | **Ngày 5** | Test end-to-end với mosquitto_pub. Viết Dockerfile. Fix bugs. |
 | **Ngày 6–7** | **TÍCH HỢP** với TV1 (sensor/actuator) và TV3 (API/Docker). Debug. |
 
 ---
 
-## 🔗 Integration Checklist (khi merge với TV1, TV3)
+##  Integration Checklist (khi merge với TV1, TV3)
 
 **Bắt buộc:**
 - [ ] Gateway nhận được telemetry từ sensor thật (TV1) — không chỉ mosquitto_pub
@@ -859,7 +841,7 @@ mosquitto_pub -h localhost -t "building/room-01/actuator/status" \
 
 ---
 
-## ⭐ NÂNG CAO — Code bổ sung
+##  NÂNG CAO — Code bổ sung
 
 ### [Nâng cao #4] Phát hiện Sensor Offline
 
@@ -925,7 +907,7 @@ class SensorOfflineDetector:
                         topic = f"building/{room_id}/gateway/event"
                         self.mqtt_client.publish(topic, json.dumps(event), qos=1)
                         logger.warning(
-                            f"🚨 SENSOR OFFLINE: {room_id} silent for {elapsed:.0f}s"
+                            f" SENSOR OFFLINE: {room_id} silent for {elapsed:.0f}s"
                         )
                 except Exception as e:
                     logger.error(f"Error checking offline for {room_id}: {e}")
@@ -1113,9 +1095,7 @@ def make_actuator(fan="off", light="off", alarm="off") -> dict:
     return {"fan": fan, "light": light, "alarm": alarm}
 
 
-# ============================================================
 # Tests for Rule 1: temperature_high → fan ON
-# ============================================================
 class TestRule1TemperatureHigh:
 
     def test_high_temp_triggers_fan_on(self):
@@ -1143,9 +1123,7 @@ class TestRule1TemperatureHigh:
         assert all(e["event_type"] != "temperature_high" for e in events)
 
 
-# ============================================================
 # Tests for Rule 2: temperature_low → fan OFF
-# ============================================================
 class TestRule2TemperatureLow:
 
     def test_low_temp_triggers_fan_off(self):
@@ -1163,9 +1141,7 @@ class TestRule2TemperatureLow:
         assert len(commands) == 0
 
 
-# ============================================================
 # Tests for Rule 3: co2_high → alarm ON
-# ============================================================
 class TestRule3Co2High:
 
     def test_high_co2_triggers_alarm(self):
@@ -1185,9 +1161,7 @@ class TestRule3Co2High:
         assert all(e["event_type"] != "co2_high" for e in events)
 
 
-# ============================================================
 # Tests for Rule 4: unnecessary_light
-# ============================================================
 class TestRule4UnnecessaryLight:
 
     def test_no_occupancy_bright_triggers_light_off(self):

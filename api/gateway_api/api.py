@@ -4,15 +4,12 @@ Provides endpoints to query room states and send manual commands.
 Built with FastAPI.
 """
 
-# ============================================================
-# 📋 CHECKLIST TÍCH HỢP — Những chỗ CẦN KIỂM TRA sau khi nhận code TV1 + TV2
-# ============================================================
-# ⚠️ [1] KNOWN_ROOMS  : Phải khớp với ROOM_ID TV1 khai báo trong sensor/actuator
-# ⚠️ [2] MQTT topics  : Phải khớp với topic TV1 subscribe (building/{room_id}/actuator/command)
-# ⚠️ [3] Measurement  : Phải khớp với tên TV2 dùng khi ghi vào InfluxDB
-# ⚠️ [4] Field names  : Phải khớp với tên fields TV2 ghi vào InfluxDB
-# ⚠️ [5] MQTT auth    : Nếu TV2 bật auth, cần thêm username_pw_set() vào mqtt_client
-# ============================================================
+#  CHECKLIST TÍCH HỢP — Những chỗ CẦN KIỂM TRA sau khi nhận code TV1 + TV2
+# ️ [1] KNOWN_ROOMS  : Phải khớp với ROOM_ID TV1 khai báo trong sensor/actuator
+# ️ [2] MQTT topics  : Phải khớp với topic TV1 subscribe (building/{room_id}/actuator/command)
+# ️ [3] Measurement  : Phải khớp với tên TV2 dùng khi ghi vào InfluxDB
+# ️ [4] Field names  : Phải khớp với tên fields TV2 ghi vào InfluxDB
+# ️ [5] MQTT auth    : Nếu TV2 bật auth, cần thêm username_pw_set() vào mqtt_client
 
 import os
 import json
@@ -25,9 +22,7 @@ from pydantic import BaseModel
 import paho.mqtt.client as mqtt
 from influxdb_client import InfluxDBClient
 
-# ============================================================
 # Đọc cấu hình từ environment variables
-# ============================================================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://influxdb:8086")
@@ -35,7 +30,7 @@ INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-token")
 INFLUXDB_ORG = os.getenv("INFLUXDB_ORG", "iot-org")
 INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "smart-building")
 
-# ⚠️ TODO [SYNC TV1] — Checklist item #1
+# ️ TODO [SYNC TV1] — Checklist item #1
 # Danh sách phòng PHẢI KHỚP với ROOM_ID mà TV1 cấu hình trong sensor và actuator.
 # Kiểm tra: docker-compose.yml của TV1 → env var ROOM_ID của mỗi container sensor/actuator
 # Nếu TV1 dùng tên khác (vd: "room_01" thay vì "room-01") → sửa list này
@@ -48,18 +43,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger("gateway-api")
 
-# ============================================================
 # Khởi tạo FastAPI app
-# ============================================================
 app = FastAPI(
     title="Smart Building IoT Gateway API",
     description="REST API for querying room states and sending manual commands",
     version="1.0.0"
 )
 
-# ============================================================
 # Pydantic Models — Định nghĩa cấu trúc dữ liệu request/response
-# ============================================================
 class CommandRequest(BaseModel):
     target: str    # fan | light | alarm
     action: str    # on | off
@@ -71,10 +62,8 @@ class HealthResponse(BaseModel):
     timestamp: str
 
 
-# ============================================================
 # MQTT Client — chỉ dùng để PUBLISH lệnh điều khiển
-# ============================================================
-# ⚠️ TODO [SYNC TV2] — Checklist item #5
+# ️ TODO [SYNC TV2] — Checklist item #5
 # Nếu TV2 cấu hình Mosquitto có username/password (nâng cao),
 # cần bổ sung 2 dòng sau TRƯỚC khi gọi mqtt_client.connect():
 #
@@ -96,9 +85,9 @@ async def startup():
     try:
         mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
         mqtt_client.loop_start()
-        logger.info(f"✅ MQTT connected to {MQTT_BROKER}:{MQTT_PORT}")
+        logger.info(f" MQTT connected to {MQTT_BROKER}:{MQTT_PORT}")
     except Exception as e:
-        logger.error(f"❌ MQTT connection failed: {e}")
+        logger.error(f" MQTT connection failed: {e}")
 
 
 @app.on_event("shutdown")
@@ -108,9 +97,7 @@ async def shutdown():
     mqtt_client.disconnect()
 
 
-# ============================================================
 # InfluxDB Query Helpers
-# ============================================================
 def get_influx_client():
     """Tạo mới InfluxDB client mỗi lần dùng."""
     return InfluxDBClient(
@@ -125,12 +112,12 @@ def query_latest_telemetry(room_id: str) -> Optional[dict]:
     client = get_influx_client()
     query_api = client.query_api()
 
-    # ⚠️ TODO [SYNC TV2] — Checklist item #3
+    # ️ TODO [SYNC TV2] — Checklist item #3
     # Tên measurement "room_telemetry" PHẢI KHỚP với tên TV2 dùng khi write vào InfluxDB.
     # Kiểm tra file iot_gateway/gateway.py của TV2 → tìm dòng write_api.write(...)
     # Ví dụ: nếu TV2 dùng measurement="telemetry" thì sửa "room_telemetry" → "telemetry"
     #
-    # ⚠️ TODO [SYNC TV2] — Checklist item #4 (Field names)
+    # ️ TODO [SYNC TV2] — Checklist item #4 (Field names)
     # Tag "room_id" và các field "temperature", "humidity", "light_lux",
     # "co2_ppm", "occupancy" PHẢI KHỚP với tags/fields TV2 ghi vào InfluxDB.
     # Kiểm tra: shared contract trong project_prompt.md → A6. InfluxDB Measurements
@@ -149,7 +136,7 @@ def query_latest_telemetry(room_id: str) -> Optional[dict]:
             for record in table.records:
                 return {
                     "room_id": room_id,
-                    # ⚠️ TODO [SYNC TV2]: Các key dưới đây phải khớp với field name TV2 ghi vào InfluxDB
+                    # ️ TODO [SYNC TV2]: Các key dưới đây phải khớp với field name TV2 ghi vào InfluxDB
                     # Nếu TV2 ghi field là "temp" thay vì "temperature" → sửa "temperature" → "temp"
                     "temperature": record.values.get("temperature"),
                     "humidity": record.values.get("humidity"),
@@ -171,7 +158,7 @@ def query_latest_actuator(room_id: str) -> Optional[dict]:
     client = get_influx_client()
     query_api = client.query_api()
 
-    # ⚠️ TODO [SYNC TV2] — Checklist item #3
+    # ️ TODO [SYNC TV2] — Checklist item #3
     # Tên measurement "actuator_status" PHẢI KHỚP với tên TV2 ghi vào InfluxDB.
     # TV2 ghi actuator status sau khi nhận status message từ TV1 (actuator).
     # Kiểm tra iot_gateway/gateway.py của TV2 → measurement name khi ghi actuator_status
@@ -190,7 +177,7 @@ def query_latest_actuator(room_id: str) -> Optional[dict]:
             for record in table.records:
                 return {
                     "room_id": room_id,
-                    # ⚠️ TODO [SYNC TV1 + TV2]: "fan", "light", "alarm" là tên field
+                    # ️ TODO [SYNC TV1 + TV2]: "fan", "light", "alarm" là tên field
                     # TV1 publish trong status message, TV2 đọc và ghi vào InfluxDB.
                     # Kiểm tra actuator.py (TV1) → status message JSON → tên keys
                     "fan": record.values.get("fan"),
@@ -211,7 +198,7 @@ def query_events(room_id: str, limit: int = 20) -> list[dict]:
     client = get_influx_client()
     query_api = client.query_api()
 
-    # ⚠️ TODO [SYNC TV2] — Checklist item #3
+    # ️ TODO [SYNC TV2] — Checklist item #3
     # Measurement "gateway_events" là do TV2 ghi vào khi rule engine phát hiện bất thường.
     # Kiểm tra iot_gateway/gateway.py (TV2) → measurement name khi ghi event
     # Tag "room_id" và fields "event_type", "severity", "value", "threshold", "action_taken"
@@ -248,9 +235,7 @@ def query_events(room_id: str, limit: int = 20) -> list[dict]:
     return events
 
 
-# ============================================================
 # API Endpoints
-# ============================================================
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -325,20 +310,20 @@ async def send_command(room_id: str, cmd: CommandRequest):
         raise HTTPException(status_code=400,
                           detail=f"Invalid action. Must be one of: {valid_actions}")
 
-    # ⚠️ TODO [SYNC TV1] — Checklist item #2
+    # ️ TODO [SYNC TV1] — Checklist item #2
     # Format của command JSON dưới đây PHẢI KHỚP với những gì TV1 expect trong actuator.py
     # Kiểm tra actuator.py (TV1) → hàm xử lý message → parse các field nào?
     # Theo Shared Contract (project_prompt.md A3), format chuẩn là:
     # { "room_id", "target": fan|light|alarm, "action": on|off, "reason", "timestamp" }
     command = {
         "room_id": room_id,
-        "target": cmd.target,    # ⚠️ TV1 expect key này là "target" hay tên khác?
-        "action": cmd.action,    # ⚠️ TV1 expect "on"/"off" hay "true"/"false"?
+        "target": cmd.target,    # ️ TV1 expect key này là "target" hay tên khác?
+        "action": cmd.action,    # ️ TV1 expect "on"/"off" hay "true"/"false"?
         "reason": cmd.reason,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
-    # ⚠️ TODO [SYNC TV1] — Checklist item #2
+    # ️ TODO [SYNC TV1] — Checklist item #2
     # Topic này PHẢI KHỚP với topic TV1 subscribe trong actuator.py
     # Kiểm tra actuator.py (TV1) → client.subscribe(...) → tên topic có đúng format này không?
     # Theo Shared Contract: building/{room_id}/actuator/command
@@ -348,7 +333,7 @@ async def send_command(room_id: str, cmd: CommandRequest):
     result = mqtt_client.publish(topic, payload, qos=1)
 
     if result.rc == mqtt.MQTT_ERR_SUCCESS:
-        logger.info(f"📤 Manual command sent to {room_id}: {cmd.target}={cmd.action}")
+        logger.info(f" Manual command sent to {room_id}: {cmd.target}={cmd.action}")
         return {
             "status": "command_sent",
             "command": command,

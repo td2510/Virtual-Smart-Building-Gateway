@@ -24,9 +24,7 @@ from rule_engine import evaluate, _make_event, _make_command
 from state_store import StateStore
 
 
-# ============================================================
 # Shared Contract Constants (from project_prompt.md)
-# ============================================================
 # These are the contracts both Gateway (M2) and API (M3) must follow.
 KNOWN_ROOMS = ["room-01", "room-02", "room-03"]
 
@@ -55,9 +53,7 @@ EVENT_TOPIC_PATTERN = "building/{room_id}/gateway/event"
 NORMALIZED_TOPIC_PATTERN = "building/{room_id}/gateway/normalized"
 
 
-# ============================================================
 # Sample data (simulating what Member 1's sensor would produce)
-# ============================================================
 def make_sensor_telemetry(room_id="room-01", **overrides):
     """Create a sensor telemetry message matching Member 1's format."""
     msg = {
@@ -89,9 +85,7 @@ def make_actuator_status(room_id="room-01", **overrides):
     return msg
 
 
-# ============================================================
 # Test 1: Validate Gateway writes fields that API can read
-# ============================================================
 class TestInfluxDBFieldCompatibility:
     """Verify Gateway writes the exact fields/tags that API queries expect."""
 
@@ -167,9 +161,7 @@ class TestInfluxDBFieldCompatibility:
         assert set(gateway_actuator_fields) == set(api_actuator_fields)
 
 
-# ============================================================
 # Test 2: MQTT Topic Compatibility
-# ============================================================
 class TestMQTTTopicCompatibility:
     """Verify Gateway and API use the same MQTT topic patterns."""
 
@@ -195,9 +187,7 @@ class TestMQTTTopicCompatibility:
             assert event_topic == EVENT_TOPIC_PATTERN.format(room_id=room_id)
 
 
-# ============================================================
 # Test 3: Command Message Format Compatibility
-# ============================================================
 class TestCommandFormatCompatibility:
     """
     Verify the command messages sent by API match what Gateway/Actuator expect.
@@ -244,9 +234,7 @@ class TestCommandFormatCompatibility:
         assert cmd["reason"] == "temperature_high"
 
 
-# ============================================================
 # Test 4: Event Message Format Compatibility
-# ============================================================
 class TestEventFormatCompatibility:
     """Verify event messages from Gateway match what API queries expect."""
 
@@ -282,9 +270,7 @@ class TestEventFormatCompatibility:
         assert events2[0]["severity"] == "critical"
 
 
-# ============================================================
 # Test 5: State Store ↔ API Response Structure
-# ============================================================
 class TestStateStoreAPICompatibility:
     """
     Verify state store's to_dict() format is compatible with
@@ -331,9 +317,7 @@ class TestStateStoreAPICompatibility:
             assert field in actuator, f"Missing actuator field: {field}"
 
 
-# ============================================================
 # Test 6: End-to-End Flow Simulation (no MQTT/InfluxDB needed)
-# ============================================================
 class TestEndToEndFlow:
     """
     Simulate the complete data flow:

@@ -88,20 +88,20 @@
 ## Data Flow
 
 ```
-Sensor ──publish──► building/{room_id}/sensor/telemetry ──subscribe──► Gateway
+Sensor ──publish── building/{room_id}/sensor/telemetry ──subscribe── Gateway
                                                                           │
                                                                     ┌─────┴─────┐
                                                                     │           │
                                                               Validate    Evaluate
                                                               Normalize   Rules
                                                                     │           │
-                                                                    ▼           ▼
+                                                                               
                                                               Write to    Generate
                                                               InfluxDB    Events/Commands
                                                                           │         │
-                                                                          ▼         ▼
-Gateway ──publish──► building/{room_id}/actuator/command ──subscribe──► Actuator
-Actuator ──publish──► building/{room_id}/actuator/status ──subscribe──► Gateway
-Gateway ──publish──► building/{room_id}/gateway/event
-Gateway ──publish──► building/{room_id}/gateway/normalized
+                                                                                   
+Gateway ──publish── building/{room_id}/actuator/command ──subscribe── Actuator
+Actuator ──publish── building/{room_id}/actuator/status ──subscribe── Gateway
+Gateway ──publish── building/{room_id}/gateway/event
+Gateway ──publish── building/{room_id}/gateway/normalized
 ```

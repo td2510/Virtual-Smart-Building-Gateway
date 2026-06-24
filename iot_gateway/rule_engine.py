@@ -55,9 +55,7 @@ def _make_command(room_id: str, target: str, action: str,
     }
 
 
-# ============================================================
 # Rule Definitions
-# ============================================================
 
 def rule_temperature_high(room_id: str, data: dict,
                           actuator_state: dict) -> RuleResult:
@@ -68,7 +66,7 @@ def rule_temperature_high(room_id: str, data: dict,
     if temp > threshold:
         # Only trigger if fan is not already ON
         if actuator_state.get("fan") != "on":
-            logger.info(f"🔥 Rule triggered: temperature_high in {room_id} "
+            logger.info(f" Rule triggered: temperature_high in {room_id} "
                        f"(value={temp}, threshold={threshold})")
             return RuleResult(
                 triggered=True,
@@ -88,7 +86,7 @@ def rule_temperature_low(room_id: str, data: dict,
 
     if temp < threshold:
         if actuator_state.get("fan") != "off":
-            logger.info(f"❄️ Rule triggered: temperature_low in {room_id} "
+            logger.info(f"️ Rule triggered: temperature_low in {room_id} "
                        f"(value={temp}, threshold={threshold})")
             return RuleResult(
                 triggered=True,
@@ -108,7 +106,7 @@ def rule_co2_high(room_id: str, data: dict,
 
     if co2 > threshold:
         if actuator_state.get("alarm") != "on":
-            logger.warning(f"💨 Rule triggered: co2_high in {room_id} "
+            logger.warning(f" Rule triggered: co2_high in {room_id} "
                           f"(value={co2}, threshold={threshold})")
             return RuleResult(
                 triggered=True,
@@ -128,7 +126,7 @@ def rule_unnecessary_light(room_id: str, data: dict,
 
     if not occupancy and light_lux > threshold:
         if actuator_state.get("light") != "off":
-            logger.info(f"💡 Rule triggered: unnecessary_light in {room_id} "
+            logger.info(f" Rule triggered: unnecessary_light in {room_id} "
                        f"(occupancy=false, light_lux={light_lux})")
             return RuleResult(
                 triggered=True,
@@ -140,9 +138,7 @@ def rule_unnecessary_light(room_id: str, data: dict,
     return RuleResult(triggered=False)
 
 
-# ============================================================
 # Rules Registry (extensible — just append new functions)
-# ============================================================
 RULES = [
     rule_temperature_high,
     rule_temperature_low,
@@ -151,9 +147,7 @@ RULES = [
 ]
 
 
-# ============================================================
 # Main evaluation function
-# ============================================================
 def evaluate(room_id: str, telemetry_data: dict,
              actuator_state: dict) -> tuple[list[dict], list[dict]]:
     """

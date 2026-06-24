@@ -1,6 +1,6 @@
-# 🧑‍💻 THÀNH VIÊN 3: REST API + Docker Compose + Grafana + README
+# ‍ THÀNH VIÊN 3: REST API + Docker Compose + Grafana + README
 
-## 📌 Tổng quan
+##  Tổng quan
 
 | Mục | Chi tiết |
 |---|---|
@@ -17,7 +17,7 @@
 
 ---
 
-## ✅ Checklist task theo thứ tự
+##  Checklist task theo thứ tự
 
 ### Phần bắt buộc
 
@@ -36,7 +36,7 @@
 | 11 | Viết `README.md` chi tiết | 1–2 giờ | `[ ]` |
 | 12 | Test toàn bộ stack bằng docker compose up | 1–2 giờ | `[ ]` |
 
-### ⭐ Phần nâng cao (cộng điểm khuyến khích)
+###  Phần nâng cao (cộng điểm khuyến khích)
 
 | # | Task nâng cao | Yêu cầu số | Thời gian | Trạng thái |
 |---|---|---|---|---|
@@ -48,7 +48,7 @@
 
 ---
 
-## 📐 QUY ƯỚC BẮT BUỘC (SHARED CONTRACTS)
+##  QUY ƯỚC BẮT BUỘC (SHARED CONTRACTS)
 
 ### REST API Endpoints
 
@@ -79,7 +79,7 @@
 
 ---
 
-## 📁 Code Skeleton
+##  Code Skeleton
 
 ### 1. `gateway_api/api.py`
 
@@ -101,9 +101,7 @@ from pydantic import BaseModel
 import paho.mqtt.client as mqtt
 from influxdb_client import InfluxDBClient
 
-# ============================================================
 # Configuration
-# ============================================================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 INFLUXDB_URL = os.getenv("INFLUXDB_URL", "http://influxdb:8086")
@@ -120,18 +118,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger("gateway-api")
 
-# ============================================================
 # FastAPI App
-# ============================================================
 app = FastAPI(
     title="Smart Building IoT Gateway API",
     description="REST API for querying room states and sending manual commands",
     version="1.0.0"
 )
 
-# ============================================================
 # Pydantic Models
-# ============================================================
 class CommandRequest(BaseModel):
     target: str    # fan | light | alarm
     action: str    # on | off
@@ -143,9 +137,7 @@ class HealthResponse(BaseModel):
     timestamp: str
 
 
-# ============================================================
 # MQTT Client (for publishing commands)
-# ============================================================
 mqtt_client = mqtt.Client(
     client_id="gateway-api",
     callback_api_version=mqtt.CallbackAPIVersion.VERSION2
@@ -158,9 +150,9 @@ async def startup():
     try:
         mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
         mqtt_client.loop_start()
-        logger.info(f"✅ MQTT connected to {MQTT_BROKER}:{MQTT_PORT}")
+        logger.info(f" MQTT connected to {MQTT_BROKER}:{MQTT_PORT}")
     except Exception as e:
-        logger.error(f"❌ MQTT connection failed: {e}")
+        logger.error(f" MQTT connection failed: {e}")
 
 
 @app.on_event("shutdown")
@@ -170,9 +162,7 @@ async def shutdown():
     mqtt_client.disconnect()
 
 
-# ============================================================
 # InfluxDB Query Helper
-# ============================================================
 def get_influx_client():
     return InfluxDBClient(
         url=INFLUXDB_URL,
@@ -286,9 +276,7 @@ def query_events(room_id: str, limit: int = 20) -> list[dict]:
     return events
 
 
-# ============================================================
 # API Endpoints
-# ============================================================
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -374,7 +362,7 @@ async def send_command(room_id: str, cmd: CommandRequest):
     result = mqtt_client.publish(topic, payload, qos=1)
 
     if result.rc == mqtt.MQTT_ERR_SUCCESS:
-        logger.info(f"📤 Manual command sent to {room_id}: "
+        logger.info(f" Manual command sent to {room_id}: "
                    f"{cmd.target}={cmd.action}")
         return {
             "status": "command_sent",
@@ -420,9 +408,7 @@ CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
 version: "3.8"
 
 services:
-  # ============================================================
   # MQTT Broker
-  # ============================================================
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: mosquitto
@@ -435,9 +421,7 @@ services:
       - mosquitto_log:/mosquitto/log
     restart: unless-stopped
 
-  # ============================================================
   # InfluxDB
-  # ============================================================
   influxdb:
     image: influxdb:2
     container_name: influxdb
@@ -454,9 +438,7 @@ services:
       - influxdb_data:/var/lib/influxdb2
     restart: unless-stopped
 
-  # ============================================================
   # Grafana
-  # ============================================================
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -472,9 +454,7 @@ services:
       - influxdb
     restart: unless-stopped
 
-  # ============================================================
   # Virtual Sensors (1 per room)
-  # ============================================================
   virtual-sensor-room-01:
     build: ./virtual_sensor
     container_name: virtual-sensor-room-01
@@ -514,9 +494,7 @@ services:
       - mosquitto
     restart: unless-stopped
 
-  # ============================================================
   # Virtual Actuators (1 per room)
-  # ============================================================
   virtual-actuator-room-01:
     build: ./virtual_actuator
     container_name: virtual-actuator-room-01
@@ -553,9 +531,7 @@ services:
       - mosquitto
     restart: unless-stopped
 
-  # ============================================================
   # IoT Gateway
-  # ============================================================
   iot-gateway:
     build: ./iot_gateway
     container_name: iot-gateway
@@ -571,9 +547,7 @@ services:
       - influxdb
     restart: unless-stopped
 
-  # ============================================================
   # Gateway REST API
-  # ============================================================
   gateway-api:
     build: ./gateway_api
     container_name: gateway-api
@@ -591,9 +565,7 @@ services:
       - influxdb
     restart: unless-stopped
 
-# ============================================================
 # Volumes
-# ============================================================
 volumes:
   mosquitto_data:
   mosquitto_log:
@@ -630,9 +602,7 @@ connection_messages true
 ### 6. `.env.example`
 
 ```env
-# ============================================================
 # Smart Building IoT Gateway - Environment Variables
-# ============================================================
 # Copy this file to .env and modify as needed:
 #   cp .env.example .env
 
@@ -716,16 +686,16 @@ providers:
 ### 9. `README.md` (Template)
 
 ```markdown
-# 🏢 Smart Building IoT Gateway
+#  Smart Building IoT Gateway
 
 Hệ thống Virtual IoT Gateway cho Smart Building — mô phỏng việc thu thập dữ liệu
 cảm biến, phát hiện bất thường và điều khiển thiết bị qua MQTT.
 
-## 📐 Kiến trúc hệ thống
+##  Kiến trúc hệ thống
 
 (Chèn sơ đồ kiến trúc ở đây)
 
-## 🚀 Cách chạy
+##  Cách chạy
 
 ### Yêu cầu
 - Docker & Docker Compose
@@ -747,7 +717,7 @@ docker compose up -d --build
 docker compose ps
 \```
 
-## 📊 Truy cập các service
+##  Truy cập các service
 
 | Service | URL | Credentials |
 |---|---|---|
@@ -756,7 +726,7 @@ docker compose ps
 | REST API | http://localhost:8000 | — |
 | API Docs (Swagger) | http://localhost:8000/docs | — |
 
-## 🔍 Kiểm tra log
+##  Kiểm tra log
 
 \```bash
 docker compose logs -f iot-gateway
@@ -765,7 +735,7 @@ docker compose logs -f virtual-sensor-room-01
 docker compose logs -f virtual-actuator-room-01
 \```
 
-## 📡 REST API Endpoints
+##  REST API Endpoints
 
 | Method | Endpoint | Mô tả |
 |---|---|---|
@@ -782,19 +752,19 @@ curl -X POST http://localhost:8000/rooms/room-01/command \
   -d '{"target":"fan","action":"on","reason":"manual_control"}'
 \```
 
-## 🛑 Dừng hệ thống
+##  Dừng hệ thống
 \```bash
 docker compose down
 \```
 
-## ❓ Troubleshooting
+##  Troubleshooting
 
 - **Container không start**: Kiểm tra `docker compose logs <service-name>`
 - **MQTT không kết nối**: Đảm bảo Mosquitto container running
 - **InfluxDB không có data**: Kiểm tra gateway logs, đảm bảo token đúng
 - **Grafana không hiện data**: Kiểm tra datasource configuration
 
-## 👥 Phân công
+##  Phân công
 
 | Thành viên | Nhiệm vụ |
 |---|---|
@@ -805,7 +775,7 @@ docker compose down
 
 ---
 
-## 🧪 Hướng dẫn Test Độc Lập
+##  Hướng dẫn Test Độc Lập
 
 ### Bước 1: Chạy hạ tầng
 
@@ -868,16 +838,16 @@ Dùng InfluxDB UI (http://localhost:8086) hoặc mosquitto_pub + gateway giả l
 Truy cập http://localhost:8000/docs để test tất cả endpoints trực quan.
 
 **Kiểm tra:**
-- ✅ `GET /health` trả về `{"status": "ok"}`
-- ✅ `GET /rooms` trả về 3 rooms
-- ✅ `POST .../command` publish message lên MQTT topic đúng
-- ✅ `GET .../state` trả về data từ InfluxDB (khi có data)
-- ✅ `GET .../events` trả về danh sách events
-- ✅ API không crash khi InfluxDB chưa có data
+-  `GET /health` trả về `{"status": "ok"}`
+-  `GET /rooms` trả về 3 rooms
+-  `POST .../command` publish message lên MQTT topic đúng
+-  `GET .../state` trả về data từ InfluxDB (khi có data)
+-  `GET .../events` trả về danh sách events
+-  API không crash khi InfluxDB chưa có data
 
 ---
 
-## 📅 Timeline gợi ý (trong 1 tuần)
+##  Timeline gợi ý (trong 1 tuần)
 
 | Ngày | Công việc |
 |---|---|
@@ -890,7 +860,7 @@ Truy cập http://localhost:8000/docs để test tất cả endpoints trực qua
 
 ---
 
-## 🔗 Integration Checklist (khi merge với TV1, TV2)
+##  Integration Checklist (khi merge với TV1, TV2)
 
 - [ ] `docker compose up -d --build` chạy không lỗi
 - [ ] `docker compose ps` — tất cả container đều running
@@ -912,7 +882,7 @@ Truy cập http://localhost:8000/docs để test tất cả endpoints trực qua
 
 ---
 
-## ⭐ NÂNG CAO — Code bổ sung
+##  NÂNG CAO — Code bổ sung
 
 ### [Nâng cao #1] Mosquitto Authentication (username/password)
 

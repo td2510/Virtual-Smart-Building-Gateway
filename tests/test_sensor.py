@@ -17,9 +17,7 @@ import importlib
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "virtual_sensor"))
 
 
-# ============================================================
 # Helper: Import SensorSimulator without running the module
-# ============================================================
 def get_simulator_class():
     """Import SensorSimulator from sensor.py."""
     # Set env vars before importing to avoid issues
@@ -31,9 +29,7 @@ def get_simulator_class():
     return sensor.SensorSimulator
 
 
-# ============================================================
 # Tests for SensorSimulator
-# ============================================================
 class TestSensorSimulator:
 
     def setup_method(self):
@@ -134,9 +130,7 @@ class TestSensorSimulator:
         assert "T" in ts  # ISO 8601 has 'T' separator
 
 
-# ============================================================
 # Tests for Telemetry Message Format Compatibility with Gateway
-# ============================================================
 class TestTelemetryFormatCompatibility:
     """Verify sensor output matches what Gateway (M2) expects."""
 

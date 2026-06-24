@@ -20,9 +20,7 @@ from datetime import datetime, timezone
 
 import paho.mqtt.client as mqtt
 
-# ============================================================
 # Configuration from environment variables
-# ============================================================
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mosquitto")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 ROOM_ID = os.getenv("ROOM_ID", "room-01")
@@ -40,9 +38,7 @@ logging.basicConfig(
 logger = logging.getLogger(DEVICE_ID)
 
 
-# ============================================================
 # Sensor Data Simulator
-# ============================================================
 class SensorSimulator:
     """
     Simulates environmental sensor data with realistic trends.
@@ -97,13 +93,13 @@ class SensorSimulator:
             ])
             if anomaly_type == "temperature_high":
                 self.temperature = round(random.uniform(31.0, 38.0), 2)
-                logger.warning(f"🔥 ANOMALY: temperature spike → {self.temperature}°C")
+                logger.warning(f" ANOMALY: temperature spike → {self.temperature}°C")
             elif anomaly_type == "co2_high":
                 self.co2_ppm = round(random.uniform(1250.0, 2000.0), 2)
-                logger.warning(f"💨 ANOMALY: CO2 spike → {self.co2_ppm} ppm")
+                logger.warning(f" ANOMALY: CO2 spike → {self.co2_ppm} ppm")
             elif anomaly_type == "humidity_high":
                 self.humidity = round(random.uniform(85.0, 98.0), 2)
-                logger.warning(f"💧 ANOMALY: humidity spike → {self.humidity}%")
+                logger.warning(f" ANOMALY: humidity spike → {self.humidity}%")
 
         # --- Build telemetry message ---
         now = datetime.now(timezone.utc).isoformat()
@@ -121,23 +117,19 @@ class SensorSimulator:
         return message
 
 
-# ============================================================
 # MQTT Callbacks
-# ============================================================
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        logger.info(f"✅ Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
+        logger.info(f" Connected to MQTT broker at {MQTT_BROKER}:{MQTT_PORT}")
     else:
-        logger.error(f"❌ Failed to connect, return code: {rc}")
+        logger.error(f" Failed to connect, return code: {rc}")
 
 
 def on_disconnect(client, userdata, rc, properties=None):
-    logger.warning(f"⚠️ Disconnected from MQTT broker (rc={rc}). Will reconnect...")
+    logger.warning(f"️ Disconnected from MQTT broker (rc={rc}). Will reconnect...")
 
 
-# ============================================================
 # Main loop
-# ============================================================
 def main():
     logger.info(f"Starting Virtual Sensor: {DEVICE_ID} for {ROOM_ID}")
     logger.info(f"Publishing to topic: {TELEMETRY_TOPIC}")
@@ -175,7 +167,7 @@ def main():
 
             result = client.publish(TELEMETRY_TOPIC, payload, qos=1)
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
-                logger.info(f"📤 Published: temp={telemetry['temperature']}, "
+                logger.info(f" Published: temp={telemetry['temperature']}, "
                            f"humidity={telemetry['humidity']}, "
                            f"co2={telemetry['co2_ppm']}, "
                            f"light={telemetry['light_lux']}, "

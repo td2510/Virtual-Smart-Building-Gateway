@@ -1,21 +1,21 @@
-# 🏢 Virtual Smart Building IoT Gateway
+#  Virtual Smart Building IoT Gateway
 
 Hệ thống giám sát và điều khiển tòa nhà thông minh ảo (Virtual Smart Building) sử dụng IoT Gateway. Hệ thống mô phỏng các cảm biến môi trường, bộ điều khiển thiết bị, rule engine xử lý bất thường, REST API và dashboard Grafana — tất cả triển khai bằng Docker Compose.
 
-## 📐 Kiến trúc hệ thống
+##  Kiến trúc hệ thống
 
 ```
 ┌──────────────┐     MQTT Telemetry      ┌──────────────┐     Write       ┌──────────────┐
-│  Virtual     │ ──────────────────────► │  IoT         │ ─────────────► │  InfluxDB    │
+│  Virtual     │ ────────────────────── │  IoT         │ ───────────── │  InfluxDB    │
 │  Sensors     │  building/{room}/       │  Gateway     │                │  (Time-Series│
 │  (3 phòng)   │  sensor/telemetry       │  + Rule      │                │   Database)  │
 └──────────────┘                         │  Engine      │                └──────┬───────┘
                                          └──────┬───────┘                       │
                                                 │                               │ Query
                                     MQTT Command│                               │
-                                                ▼                               ▼
+                                                                               
 ┌──────────────┐     MQTT Status         ┌──────────────┐              ┌──────────────┐
-│  Virtual     │ ◄────────────────────── │  building/   │              │  REST API    │
+│  Virtual     │ ────────────────────── │  building/   │              │  REST API    │
 │  Actuators   │  building/{room}/       │  {room}/     │              │  (FastAPI)   │
 │  (3 phòng)   │  actuator/status        │  actuator/   │              │  Port 8000   │
 └──────────────┘                         │  command     │              └──────────────┘
@@ -43,7 +43,7 @@ Hệ thống giám sát và điều khiển tòa nhà thông minh ảo (Virtual 
 
 ---
 
-## 📦 Danh sách Services
+##  Danh sách Services
 
 | Service | Container Name | Port | Mô tả |
 |---|---|---|---|
@@ -61,7 +61,7 @@ Hệ thống giám sát và điều khiển tòa nhà thông minh ảo (Virtual 
 
 ---
 
-## ⚙️ Environment Variables
+## ️ Environment Variables
 
 Tất cả service đều đọc cấu hình từ environment variables, **không hard-code** trong source code.
 
@@ -119,7 +119,7 @@ Tất cả service đều đọc cấu hình từ environment variables, **khôn
 
 ---
 
-## 🚀 Cách chạy hệ thống
+##  Cách chạy hệ thống
 
 ### Yêu cầu
 
@@ -178,7 +178,7 @@ docker compose up -d --build
 
 ---
 
-## 📋 Cách kiểm tra Log
+##  Cách kiểm tra Log
 
 ### Xem log tất cả services
 
@@ -193,9 +193,9 @@ docker compose logs -f iot-gateway
 ```
 
 Log gateway sẽ hiển thị:
-- `📩 Telemetry from room-01: temp=...` — Nhận dữ liệu
-- `🚨 Event: temperature_high in room-01` — Phát hiện bất thường
-- `📤 Command sent to room-01: fan=on` — Gửi lệnh điều khiển
+- ` Telemetry from room-01: temp=...` — Nhận dữ liệu
+- ` Event: temperature_high in room-01` — Phát hiện bất thường
+- ` Command sent to room-01: fan=on` — Gửi lệnh điều khiển
 
 ### Xem log REST API
 
@@ -225,7 +225,7 @@ docker compose logs -f mosquitto
 
 ---
 
-## 🌐 Cách truy cập Grafana, InfluxDB và REST API
+##  Cách truy cập Grafana, InfluxDB và REST API
 
 ### Grafana Dashboard
 
@@ -276,7 +276,7 @@ curl http://localhost:8000/rooms/room-01/events
 
 ---
 
-## 🎮 Cách gửi lệnh điều khiển thủ công
+##  Cách gửi lệnh điều khiển thủ công
 
 ### Qua REST API
 
@@ -324,7 +324,7 @@ python tests/test_anomaly_publish.py --broker localhost --room room-01 --scenari
 
 ---
 
-## 🧪 Chạy Tests
+##  Chạy Tests
 
 ```bash
 # Chạy tất cả tests (không cần Docker)
@@ -341,7 +341,7 @@ python -m pytest tests/test_full_integration.py -v # Test tích hợp 3 thành v
 
 ---
 
-## 📁 Cấu trúc thư mục
+##  Cấu trúc thư mục
 
 ```
 Virtual-Smart-Building-Gateway/
@@ -385,7 +385,7 @@ Virtual-Smart-Building-Gateway/
 
 ---
 
-## 🔧 MQTT Topics
+##  MQTT Topics
 
 | Topic | Hướng | Mô tả |
 |---|---|---|
@@ -399,7 +399,7 @@ Virtual-Smart-Building-Gateway/
 
 ---
 
-## 🐛 Các lỗi thường gặp và cách khắc phục
+##  Các lỗi thường gặp và cách khắc phục
 
 ### 1. Port đã bị chiếm
 
@@ -480,7 +480,7 @@ docker compose logs -f virtual-sensor-room-01
 
 ---
 
-## 📊 Các lệnh Docker hữu ích
+##  Các lệnh Docker hữu ích
 
 ```bash
 # Khởi động hệ thống

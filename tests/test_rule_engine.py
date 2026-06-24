@@ -39,9 +39,7 @@ def make_actuator(fan="off", light="off", alarm="off") -> dict:
     return {"fan": fan, "light": light, "alarm": alarm}
 
 
-# ============================================================
 # Tests for Rule 1: temperature_high → fan ON
-# ============================================================
 class TestRule1TemperatureHigh:
 
     def test_high_temp_triggers_fan_on(self):
@@ -91,9 +89,7 @@ class TestRule1TemperatureHigh:
         assert len(temp_events) == 1
 
 
-# ============================================================
 # Tests for Rule 2: temperature_low → fan OFF
-# ============================================================
 class TestRule2TemperatureLow:
 
     def test_low_temp_triggers_fan_off(self):
@@ -124,9 +120,7 @@ class TestRule2TemperatureLow:
         assert all(e["event_type"] != "temperature_low" for e in events)
 
 
-# ============================================================
 # Tests for Rule 3: co2_high → alarm ON
-# ============================================================
 class TestRule3Co2High:
 
     def test_high_co2_triggers_alarm(self):
@@ -159,9 +153,7 @@ class TestRule3Co2High:
         assert len(alarm_cmds) == 0
 
 
-# ============================================================
 # Tests for Rule 4: unnecessary_light
-# ============================================================
 class TestRule4UnnecessaryLight:
 
     def test_no_occupancy_bright_triggers_light_off(self):
@@ -206,9 +198,7 @@ class TestRule4UnnecessaryLight:
         assert all(e["event_type"] != "unnecessary_light" for e in events)
 
 
-# ============================================================
 # Tests for multiple rules triggering simultaneously
-# ============================================================
 class TestMultipleRules:
 
     def test_multiple_rules_trigger(self):
