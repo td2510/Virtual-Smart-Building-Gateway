@@ -1,11 +1,6 @@
-#  CHECKLIST TÍCH HỢP — Những chỗ CẦN SỬa sau khi nhận code TV1 + TV2
-# ️ [A] BUILD PATHS : Kiểm tra đường dẫn thư mục của TV1 và TV2 có đúng không
 #      • ./virtual_sensor   → TV1 có tạo thư mục này đúng tên không?
 #      • ./virtual_actuator → TV1 có tạo thư mục này đúng tên không?
 #      • ./iot_gateway      → TV2 có tạo thư mục này đúng tên không?
-# ️ [B] ENV VARS      : Chắc chắn các env var trong mỗi service khớp với code của TV1 và TV2
-# ️ [C] ROOM_ID       : Đảm bảo ROOM_ID trong sensor/actuator trùng với KNOWN_ROOMS trong api.py
-# ️ [D] PORT CONFLICTS: Kiểm tra máy bạn không có service nào đang dùng port 1883, 8086, 3000, 8000
 
 services:
   # MQTT Broker — "Bưu điện" trung tâm cho mọi tin nhắn IoT
@@ -55,11 +50,8 @@ services:
     restart: unless-stopped
 
   # Virtual Sensors — TV1 viết code (build từ ./virtual_sensor)
-  # ️ TODO [SYNC TV1] — Checklist item A
   # Sửa đường dẫn build nếu TV1 đặt thư mục khác tên
-  # ️ TODO [SYNC TV1] — Checklist item C
   # ROOM_ID dưới đây PHẢI KHỚP với những gì TV1 kỳ vọng trong sensor.py
-  # ️ TODO [SYNC TV1] — Checklist item B
   # Hỏi TV1: sensor.py đọc env var nào? Có cần thêm env var nào không?
   virtual-sensor-room-01:
     build: ../virtual_sensor
@@ -101,9 +93,7 @@ services:
     restart: unless-stopped
 
   # Virtual Actuators — TV1 viết code (build từ ./virtual_actuator)
-  # ️ TODO [SYNC TV1] — Checklist item A
   # Sửa đường dẫn build nếu TV1 đặt thư mục khác tên
-  # ️ TODO [SYNC TV1] — Checklist item B
   # Hỏi TV1: actuator.py đọc env var nào ngoài các biến đã liệt kê?
   virtual-actuator-room-01:
     build: ../virtual_actuator
@@ -142,9 +132,7 @@ services:
     restart: unless-stopped
 
   # IoT Gateway — TV2 viết code (build từ ./iot_gateway)
-  # ️ TODO [SYNC TV2] — Checklist item A
   # Sửa đường dẫn build nếu TV2 đặt thư mục khác tên (vd: "gateway" thay vì "iot_gateway")
-  # ️ TODO [SYNC TV2] — Checklist item B
   # Hỏi TV2: gateway.py đọc env var nào ngoài các biến đã liệt kê? Có thêm ROOM_ID hay LOG_LEVEL không?
   iot-gateway:
     build: ../iot_gateway
