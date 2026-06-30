@@ -3,7 +3,7 @@ policies:
   - orgId: 1
     receiver: "Admin Webhook"
     group_by: ['grafana_folder', 'alertname']
-rules:
+groups:
   - orgId: 1
     name: "Smart Building Alerts"
     folder: "Gateway Alerts"
