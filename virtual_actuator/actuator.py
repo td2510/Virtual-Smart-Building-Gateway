@@ -74,7 +74,7 @@ class ActuatorState:
             logger.info(f" {target.upper()}: {old_value} → {action} "
                        f"(reason: {reason})")
         else:
-            logger.info(f"ℹ️ {target.upper()} already {action} "
+            logger.info(f" {target.upper()} already {action} "
                        f"(reason: {reason})")
 
         return True

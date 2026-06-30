@@ -1,9 +1,5 @@
-#      • ./virtual_sensor   → TV1 có tạo thư mục này đúng tên không?
-#      • ./virtual_actuator → TV1 có tạo thư mục này đúng tên không?
-#      • ./iot_gateway      → TV2 có tạo thư mục này đúng tên không?
-
 services:
-  # MQTT Broker — "Bưu điện" trung tâm cho mọi tin nhắn IoT
+  # MQTT Broker
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: mosquitto
@@ -66,10 +62,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Virtual Sensors — TV1 viết code (build từ ./virtual_sensor)
-  # Sửa đường dẫn build nếu TV1 đặt thư mục khác tên
-  # ROOM_ID dưới đây PHẢI KHỚP với những gì TV1 kỳ vọng trong sensor.py
-  # Hỏi TV1: sensor.py đọc env var nào? Có cần thêm env var nào không?
+  # Virtual Sensors
   virtual-sensor-room-01:
     build: ../virtual_sensor
     container_name: virtual-sensor-room-01
@@ -112,9 +105,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Virtual Actuators — TV1 viết code (build từ ./virtual_actuator)
-  # Sửa đường dẫn build nếu TV1 đặt thư mục khác tên
-  # Hỏi TV1: actuator.py đọc env var nào ngoài các biến đã liệt kê?
+  # Virtual Actuators
   virtual-actuator-room-01:
     build: ../virtual_actuator
     container_name: virtual-actuator-room-01
@@ -154,9 +145,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # IoT Gateway — TV2 viết code (build từ ./iot_gateway)
-  # Sửa đường dẫn build nếu TV2 đặt thư mục khác tên (vd: "gateway" thay vì "iot_gateway")
-  # Hỏi TV2: gateway.py đọc env var nào ngoài các biến đã liệt kê? Có thêm ROOM_ID hay LOG_LEVEL không?
+  # IoT Gateway
   iot-gateway:
     build: ../iot_gateway
     container_name: iot-gateway
@@ -174,7 +163,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Gateway REST API — TV3 viết code (build từ ./gateway_api)
+  # Gateway REST API
   gateway-api:
     build: ./gateway_api
     container_name: gateway-api

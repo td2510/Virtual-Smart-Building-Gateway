@@ -4,12 +4,6 @@ Provides endpoints to query room states and send manual commands.
 Built with FastAPI.
 """
 
-# ️ [1] KNOWN_ROOMS  : Phải khớp với ROOM_ID TV1 khai báo trong sensor/actuator
-# ️ [2] MQTT topics  : Phải khớp với topic TV1 subscribe (building/{room_id}/actuator/command)
-# ️ [3] Measurement  : Phải khớp với tên TV2 dùng khi ghi vào InfluxDB
-# ️ [4] Field names  : Phải khớp với tên fields TV2 ghi vào InfluxDB
-# ️ [5] MQTT auth    : Nếu TV2 bật auth, cần thêm username_pw_set() vào mqtt_client
-
 import os
 import json
 import logging
@@ -31,12 +25,8 @@ INFLUXDB_TOKEN = os.getenv("INFLUXDB_TOKEN", "my-super-secret-token")
 INFLUXDB_ORG = os.getenv("INFLUXDB_ORG", "iot-org")
 INFLUXDB_BUCKET = os.getenv("INFLUXDB_BUCKET", "smart-building")
 
-# Danh sách phòng PHẢI KHỚP với ROOM_ID mà TV1 cấu hình trong sensor và actuator.
-# Kiểm tra: docker-compose.yml của TV1 → env var ROOM_ID của mỗi container sensor/actuator
-# Nếu TV1 dùng tên khác (vd: "room_01" thay vì "room-01") → sửa list này
 KNOWN_ROOMS = ["room-01", "room-02", "room-03"]
 
-# Cấu hình logging để dễ debug
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -69,9 +59,7 @@ class RuleUpdateRequest(BaseModel):
     light_lux: float | None = None
 
 
-# MQTT Client — chỉ dùng để PUBLISH lệnh điều khiển
-# Nếu TV2 cấu hình Mosquitto có username/password (nâng cao),
-# cần bổ sung 2 dòng sau TRƯỚC khi gọi mqtt_client.connect():
+# MQTT Client 
 mqtt_client = None
 
 @app.on_event("startup")
@@ -116,13 +104,6 @@ def query_latest_telemetry(room_id: str) -> Optional[dict]:
     client = get_influx_client()
     query_api = client.query_api()
 
-    # Tên measurement "room_telemetry" PHẢI KHỚP với tên TV2 dùng khi write vào InfluxDB.
-    # Kiểm tra file iot_gateway/gateway.py của TV2 → tìm dòng write_api.write(...)
-    # Ví dụ: nếu TV2 dùng measurement="telemetry" thì sửa "room_telemetry" → "telemetry"
-    #
-    # Tag "room_id" và các field "temperature", "humidity", "light_lux",
-    # "co2_ppm", "occupancy" PHẢI KHỚP với tags/fields TV2 ghi vào InfluxDB.
-    # Kiểm tra: shared contract trong project_prompt.md → A6. InfluxDB Measurements
     query = f'''
     from(bucket: "{INFLUXDB_BUCKET}")
       |> range(start: -1h)
@@ -138,7 +119,6 @@ def query_latest_telemetry(room_id: str) -> Optional[dict]:
             for record in table.records:
                 return {
                     "room_id": room_id,
-                    # Nếu TV2 ghi field là "temp" thay vì "temperature" → sửa "temperature" → "temp"
                     "temperature": record.values.get("temperature"),
                     "humidity": record.values.get("humidity"),
                     "light_lux": record.values.get("light_lux"),
@@ -159,9 +139,6 @@ def query_latest_actuator(room_id: str) -> Optional[dict]:
     client = get_influx_client()
     query_api = client.query_api()
 
-    # Tên measurement "actuator_status" PHẢI KHỚP với tên TV2 ghi vào InfluxDB.
-    # TV2 ghi actuator status sau khi nhận status message từ TV1 (actuator).
-    # Kiểm tra iot_gateway/gateway.py của TV2 → measurement name khi ghi actuator_status
     query = f'''
     from(bucket: "{INFLUXDB_BUCKET}")
       |> range(start: -1h)
@@ -177,8 +154,6 @@ def query_latest_actuator(room_id: str) -> Optional[dict]:
             for record in table.records:
                 return {
                     "room_id": room_id,
-                    # TV1 publish trong status message, TV2 đọc và ghi vào InfluxDB.
-                    # Kiểm tra actuator.py (TV1) → status message JSON → tên keys
                     "fan": record.values.get("fan"),
                     "light": record.values.get("light"),
                     "alarm": record.values.get("alarm"),
@@ -197,10 +172,6 @@ def query_events(room_id: str, limit: int = 20) -> list[dict]:
     client = get_influx_client()
     query_api = client.query_api()
 
-    # Measurement "gateway_events" là do TV2 ghi vào khi rule engine phát hiện bất thường.
-    # Kiểm tra iot_gateway/gateway.py (TV2) → measurement name khi ghi event
-    # Tag "room_id" và fields "event_type", "severity", "value", "threshold", "action_taken"
-    # PHẢI KHỚP với những gì TV2 ghi vào InfluxDB.
     query = f'''
     from(bucket: "{INFLUXDB_BUCKET}")
       |> range(start: -24h)
@@ -326,10 +297,6 @@ async def send_command(room_id: str, cmd: CommandRequest):
         raise HTTPException(status_code=400,
                           detail=f"Invalid action. Must be one of: {valid_actions}")
 
-    # Format của command JSON dưới đây PHẢI KHỚP với những gì TV1 expect trong actuator.py
-    # Kiểm tra actuator.py (TV1) → hàm xử lý message → parse các field nào?
-    # Theo Shared Contract (project_prompt.md A3), format chuẩn là:
-    # { "room_id", "target": fan|light|alarm, "action": on|off, "reason", "timestamp" }
     command = {
         "room_id": room_id,
         "target": cmd.target,    # ️ TV1 expect key này là "target" hay tên khác?
@@ -338,9 +305,6 @@ async def send_command(room_id: str, cmd: CommandRequest):
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
-    # Topic này PHẢI KHỚP với topic TV1 subscribe trong actuator.py
-    # Kiểm tra actuator.py (TV1) → client.subscribe(...) → tên topic có đúng format này không?
-    # Theo Shared Contract: building/{room_id}/actuator/command
     topic = f"building/{room_id}/actuator/command"
     payload = json.dumps(command)
 
